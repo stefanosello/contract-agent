@@ -11,8 +11,8 @@
 
 **Purpose**: Project initialization, directory structure, and benchmark contract fixtures.
 
-- [ ] T001 Initialize compiler package module exports in `src/contract_agent/compiler/__init__.py`
-- [ ] T002 [P] Create benchmark contract fixtures (`01_billing_dispute`, `02_sql_read_only_agent`, `03_api_sync_agent`) in `tests/fixtures/benchmarks/`
+- [X] T001 Initialize compiler package module exports in `src/contract_agent/compiler/__init__.py`
+- [X] T002 [P] Create benchmark contract fixtures (`01_billing_dispute`, `02_sql_read_only_agent`, `03_api_sync_agent`) in `tests/fixtures/benchmarks/`
 
 ---
 
@@ -22,11 +22,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 [P] Implement compiler data models and telemetry schemas (`CompilationConfig`, `LLMResponse`, `CostTelemetry`, `VerificationReport`, `TestFailureDetail`, `CompilationResult`) in `src/contract_agent/compiler/models.py`
-- [ ] T004 [P] Implement path isolation validator enforcing write containment in `dist/` and forbidding writes to `services/` in `src/contract_agent/compiler/isolation.py`
-- [ ] T005 [P] Unit tests for path isolation and traversal security in `tests/unit/compiler/test_isolation.py`
-- [ ] T006 [P] Implement `LLMProvider` protocol, `MockLLMProvider` with fault injection, and provider factory in `src/contract_agent/compiler/providers.py`
-- [ ] T007 [P] Unit tests for `MockLLMProvider` and provider factory in `tests/unit/compiler/test_providers.py`
+- [X] T003 [P] Implement compiler data models and telemetry schemas (`CompilationConfig`, `LLMResponse`, `CostTelemetry`, `VerificationReport`, `TestFailureDetail`, `CompilationResult`) in `src/contract_agent/compiler/models.py`
+- [X] T004 [P] Implement path isolation validator enforcing write containment in `dist/` and forbidding writes to `services/` in `src/contract_agent/compiler/isolation.py`
+- [X] T005 [P] Unit tests for path isolation and traversal security in `tests/unit/compiler/test_isolation.py`
+- [X] T006 [P] Implement `LLMProvider` protocol, `MockLLMProvider` with fault injection, and provider factory in `src/contract_agent/compiler/providers.py`
+- [X] T007 [P] Unit tests for `MockLLMProvider` and provider factory in `tests/unit/compiler/test_providers.py`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
@@ -40,11 +40,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Implement deterministic AST code generator for `dist/interface.py` (Protocols) and `dist/mocks.py` in `src/contract_agent/compiler/code_generator.py`
-- [ ] T009 [P] [US1] Unit tests for deterministic protocol and mock generator in `tests/unit/compiler/test_code_generator.py`
-- [ ] T010 [P] [US1] Implement decoupled synthesizer personas (`AgentImplementer`, `AdversarialTester`) and prompt templates in `src/contract_agent/compiler/personas.py`
-- [ ] T011 [US1] Implement dual-synthesis compilation orchestrator generating `dist/.staging/` artifacts in `src/contract_agent/compiler/orchestrator.py`
-- [ ] T012 [US1] Integration test for dual-synthesis artifact generation in `tests/integration/compiler/test_dual_synthesis.py`
+- [X] T008 [P] [US1] Implement deterministic AST code generator for `dist/interface.py` (Protocols) and `dist/mocks.py` in `src/contract_agent/compiler/code_generator.py`
+- [X] T009 [P] [US1] Unit tests for deterministic protocol and mock generator in `tests/unit/compiler/test_code_generator.py`
+- [X] T010 [P] [US1] Implement decoupled synthesizer personas (`AgentImplementer`, `AdversarialTester`) and prompt templates in `src/contract_agent/compiler/personas.py`
+- [X] T011 [US1] Implement dual-synthesis compilation orchestrator generating `dist/.staging/` artifacts in `src/contract_agent/compiler/orchestrator.py`
+- [X] T012 [US1] Integration test for dual-synthesis artifact generation in `tests/integration/compiler/test_dual_synthesis.py`
 
 **Checkpoint**: At this point, User Story 1 is fully functional and delivers an independently testable MVP.
 
@@ -58,11 +58,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [P] [US2] Implement `SandboxedVerificationRunner` executing `pytest` in an isolated subprocess with 10s per-test timeout in `src/contract_agent/compiler/verification.py`
-- [ ] T014 [P] [US2] Unit tests for `SandboxedVerificationRunner` and timeout containment in `tests/unit/compiler/test_verification.py`
-- [ ] T015 [US2] Implement `SelfHealingEngine` managing `SelfHealingSession`, CEL violation diagnostic payloads, and full module repair in `src/contract_agent/compiler/self_healing.py`
-- [ ] T016 [US2] Integrate `SelfHealingEngine` verification loop into `ContractCompiler.compile()` in `src/contract_agent/compiler/orchestrator.py`
-- [ ] T017 [US2] Integration test for self-healing repair loop with fault-injected candidate converging in `tests/integration/compiler/test_self_healing_loop.py`
+- [X] T013 [P] [US2] Implement `SandboxedVerificationRunner` executing `pytest` in an isolated subprocess with 10s per-test timeout in `src/contract_agent/compiler/verification.py`
+- [X] T014 [P] [US2] Unit tests for `SandboxedVerificationRunner` and timeout containment in `tests/unit/compiler/test_verification.py`
+- [X] T015 [US2] Implement `SelfHealingEngine` managing `SelfHealingSession`, CEL violation diagnostic payloads, and full module repair in `src/contract_agent/compiler/self_healing.py`
+- [X] T016 [US2] Integrate `SelfHealingEngine` verification loop into `ContractCompiler.compile()` in `src/contract_agent/compiler/orchestrator.py`
+- [X] T017 [US2] Integration test for self-healing repair loop with fault-injected candidate converging in `tests/integration/compiler/test_self_healing_loop.py`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 are functional and self-healing verification operates autonomously.
 
@@ -76,10 +76,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T018 [P] [US3] Implement `ReviewGate` generating unified git diffs between `dist/` and `dist/.staging/` with atomic promotion in `src/contract_agent/cli/review.py`
-- [ ] T019 [P] [US3] Unit tests for `ReviewGate` diff generation, interactive confirmation, and atomic promotion in `tests/unit/compiler/test_review_gate.py`
-- [ ] T020 [US3] Implement `contract-agent compile` CLI command with interactive diff review and `--headless-ci` options in `src/contract_agent/cli/main.py`
-- [ ] T021 [US3] Integration test for CLI interactive prompts and headless CI auto-promotion in `tests/integration/compiler/test_cli_compile.py`
+- [X] T018 [P] [US3] Implement `ReviewGate` generating unified git diffs between `dist/` and `dist/.staging/` with atomic promotion in `src/contract_agent/cli/review.py`
+- [X] T019 [P] [US3] Unit tests for `ReviewGate` diff generation, interactive confirmation, and atomic promotion in `tests/unit/compiler/test_review_gate.py`
+- [X] T020 [US3] Implement `contract-agent compile` CLI command with interactive diff review and `--headless-ci` options in `src/contract_agent/cli/main.py`
+- [X] T021 [US3] Integration test for CLI interactive prompts and headless CI auto-promotion in `tests/integration/compiler/test_cli_compile.py`
 
 **Checkpoint**: All candidate promotions are guarded by the review gate per Constitution Principle V.
 
@@ -93,10 +93,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T022 [P] [US4] Implement token counting, pricing calculation, and budget ceiling guard in `src/contract_agent/compiler/telemetry.py`
-- [ ] T023 [P] [US4] Implement live LLM provider adapters for Gemini Flash and DeepSeek-V3 in `src/contract_agent/compiler/providers.py`
-- [ ] T024 [P] [US4] Unit tests for cost telemetry, token accounting, and budget ceiling aborts in `tests/unit/compiler/test_telemetry.py`
-- [ ] T025 [US4] Integrate cost telemetry reporting and budget aborts into `src/contract_agent/compiler/orchestrator.py` and CLI summary display
+- [X] T022 [P] [US4] Implement token counting, pricing calculation, and budget ceiling guard in `src/contract_agent/compiler/telemetry.py`
+- [X] T023 [P] [US4] Implement live LLM provider adapters for Gemini Flash and DeepSeek-V3 in `src/contract_agent/compiler/providers.py`
+- [X] T024 [P] [US4] Unit tests for cost telemetry, token accounting, and budget ceiling aborts in `tests/unit/compiler/test_telemetry.py`
+- [X] T025 [US4] Integrate cost telemetry reporting and budget aborts into `src/contract_agent/compiler/orchestrator.py` and CLI summary display
 
 **Checkpoint**: Cost telemetry and budget discipline are strictly enforced per Constitution Architectural Constraints.
 
@@ -106,10 +106,10 @@
 
 **Purpose**: End-to-end benchmark validation, package exports, type checking, and linting.
 
-- [ ] T026 [P] Implement end-to-end 3-contract convergence benchmark integration test in `tests/integration/compiler/test_benchmark_convergence.py`
-- [ ] T027 [P] Export public compiler classes and functions in `src/contract_agent/__init__.py`
-- [ ] T028 Validate all runnable scenarios in `specs/002-dual-synthesis-compiler/quickstart.md`
-- [ ] T029 Execute full static type analysis (`pyrefly check`) and linter checks (`ruff check src tests`)
+- [X] T026 [P] Implement end-to-end 3-contract convergence benchmark integration test in `tests/integration/compiler/test_benchmark_convergence.py`
+- [X] T027 [P] Export public compiler classes and functions in `src/contract_agent/__init__.py`
+- [X] T028 Validate all runnable scenarios in `specs/002-dual-synthesis-compiler/quickstart.md`
+- [X] T029 Execute full static type analysis (`pyrefly check`) and linter checks (`ruff check src tests`)
 
 ---
 

@@ -49,19 +49,19 @@ def test_generated_code_executability() -> None:
 
     # Compile interface
     interface_ns: dict[str, object] = {}
-    exec(interface_code, interface_ns)
+    exec(interface_code, interface_ns)  # noqa: S102
     agent_tools_proto = interface_ns["AgentToolsProtocol"]
 
     # Register mock module so import dist.interface succeeds
     fake_dist = types.ModuleType("dist")
     fake_interface = types.ModuleType("dist.interface")
-    setattr(fake_interface, "AgentToolsProtocol", agent_tools_proto)
+    fake_interface.AgentToolsProtocol = agent_tools_proto
     sys.modules["dist"] = fake_dist
     sys.modules["dist.interface"] = fake_interface
 
     try:
         mocks_ns: dict[str, object] = {}
-        exec(mocks_code, mocks_ns)
+        exec(mocks_code, mocks_ns)  # noqa: S102
         mock_cls = mocks_ns.get("MockAgentTools")
         assert mock_cls is not None
 

@@ -4,12 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from contract_agent.compiler.orchestrator import ContractCompiler
 from contract_agent.compiler.providers import MockLLMProvider
 from contract_agent.compiler.templates import generate_default_fsm_agent
-from contract_agent.core.exceptions import BudgetExceededError
 from contract_agent.core.parser import ContractParser
 
 

@@ -20,6 +20,7 @@ def test_cli_compile_headless_ci_success(tmp_path: Path) -> None:
     res = runner.invoke(
         app,
         [
+            "compile",
             contract,
             "--output-dir",
             str(out_dir),
@@ -44,6 +45,7 @@ def test_cli_compile_interactive_approval(tmp_path: Path) -> None:
     res = runner.invoke(
         app,
         [
+            "compile",
             contract,
             "--output-dir",
             str(out_dir),
@@ -65,6 +67,7 @@ def test_cli_compile_interactive_rejection(tmp_path: Path) -> None:
     res = runner.invoke(
         app,
         [
+            "compile",
             contract,
             "--output-dir",
             str(out_dir),
@@ -85,6 +88,7 @@ def test_cli_compile_forbids_services_target(tmp_path: Path) -> None:
     res = runner.invoke(
         app,
         [
+            "compile",
             contract,
             "--output-dir",
             str(bad_out),
