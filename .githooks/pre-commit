@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
-# Git pre-commit hook enforcing Constitution Principle VI:
-# Max 200 LOC changed and Max 10 files per commit.
+# Git pre-commit hook enforcing Constitution Principles VI & VII:
+# - Principle VI: Max 200 LOC changed and Max 10 files per commit.
+# - Principle VII: Direct commits to main/master prohibited (must use feature branches).
 set -e
 
 MAX_FILES=10
 MAX_LOC=200
 
 echo "🔍 Running pre-commit checks..."
+
+# 0. Check feature branch isolation (Principle VII)
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+    if [ "$ALLOW_MAIN_COMMIT" != "1" ]; then
+        echo "❌ [Pre-Commit Error] Direct commits to '$CURRENT_BRANCH' are prohibited by Constitution Principle VII."
+        echo "   Every feature must be developed in a dedicated feature branch."
+        echo "   Use Spec Kit (e.g. /speckit-specify or create_new_feature.py) or run:"
+        echo "     git checkout -b ###-feature-name"
+        echo "   (Emergency bypass for repo maintenance only: ALLOW_MAIN_COMMIT=1 git commit ...)"
+        exit 1
+    fi
+fi
 
 # 1. Check staged file count
 STAGED_FILES=$(git diff --cached --name-only)
@@ -38,5 +52,5 @@ if [ -f ".venv/bin/pyrefly" ]; then
     .venv/bin/pyrefly check
 fi
 
-echo "✅ Pre-commit verification passed ($FILE_COUNT files, $LOC_CHANGES LOC)."
+echo "✅ Pre-commit verification passed ($FILE_COUNT files, $LOC_CHANGES LOC on branch '$CURRENT_BRANCH')."
 exit 0

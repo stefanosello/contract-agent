@@ -27,6 +27,13 @@ All work must be committed in small, reviewable increments:
 - Tasks in `tasks.md` must be sized so that each task naturally maps to a single atomic commit satisfying these thresholds.
 - Enforced deterministically via repository Git pre-commit hooks (`.githooks/pre-commit`).
 
+### VII. Feature Branch Isolation
+Direct commits to `main` are strictly prohibited for feature work:
+- Every new capability or refactor must be developed in an isolated feature branch (`###-feature-name`, e.g., `002-dual-compiler`).
+- Spec Kit workflows (`create_new_feature.py` / `/speckit-specify`) automatically create and manage feature branches.
+- Merges to `main` are permitted only after all feature tasks, Pyrefly type checks, and tests pass 100%.
+- Enforced deterministically via repository Git pre-commit hooks.
+
 ## Architectural Constraints
 
 - **Language & Runtime**: Python 3.11+ with strict type annotations enforced by Pyrefly (`pyrefly check`).
