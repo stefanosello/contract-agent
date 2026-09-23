@@ -18,12 +18,12 @@ def generate_default_fsm_agent(ast: ContractAST) -> str:
         param_names = list(props.keys())
         param_kwargs = ", ".join(f"{p}=kwargs.get('{p}')" for p in param_names)
         tools_call_logic.append(
-            f"        if action == '{tool.name}':\n"
-            f"            guarded = self.interceptor.wrap_tool('{tool.name}', self.tools.{tool.name})\n"
-            f"            return guarded({param_kwargs})"
+            f"            if action == '{tool.name}':\n"
+            f"                guarded = self.interceptor.wrap_tool('{tool.name}', self.tools.{tool.name})\n"
+            f"                return guarded({param_kwargs})"
         )
 
-    tools_dispatch = "\n".join(tools_call_logic) if tools_call_logic else "        return None"
+    tools_dispatch = "\n".join(tools_call_logic) if tools_call_logic else "            return None"
 
     return f'''"""Auto-generated typed Finite State Machine agent for {ast.metadata.name}."""
 
@@ -79,8 +79,9 @@ def generate_default_test_suite(ast: ContractAST) -> str:
     test_functions: list[str] = []
 
     for idx, sc in enumerate(ast.scenarios, 1):
+        clean_id = sc.id.lower().replace("-", "_")
         lines: list[str] = [
-            f"def test_scenario_{sc.id.lower()}() -> None:",
+            f"def test_scenario_{clean_id}() -> None:",
             f'    """{sc.title}"""',
             "    tools = MockAgentTools()",
             "    context = WorkflowContext()",

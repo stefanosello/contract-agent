@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from contract_agent.compiler.code_generator import (
     generate_interface_code,
     generate_mocks_code,
 )
 from contract_agent.compiler.isolation import (
-    clean_staging_dir,
     ensure_clean_staging_dir,
     validate_output_path,
 )
 from contract_agent.compiler.models import (
-    CompilationConfig,
     CompilationResult,
     CostTelemetry,
 )
@@ -27,15 +24,13 @@ from contract_agent.compiler.personas import (
     extract_code_block,
 )
 from contract_agent.compiler.providers import LLMProvider, get_provider
+from contract_agent.compiler.self_healing import SelfHealingEngine
 from contract_agent.compiler.templates import (
     generate_default_fsm_agent,
     generate_default_test_suite,
 )
+from contract_agent.compiler.verification import SandboxedVerificationRunner
 from contract_agent.core.parser import ContractParser
-
-if TYPE_CHECKING:
-    from contract_agent.compiler.self_healing import SelfHealingEngine
-    from contract_agent.compiler.verification import SandboxedVerificationRunner
 
 
 class ContractCompiler:
@@ -52,8 +47,12 @@ class ContractCompiler:
         self.provider = provider or get_provider("mock")
         self.budget_ceiling = budget_ceiling
         self.per_test_timeout = per_test_timeout
-        self.runner = runner
-        self.self_healing_engine = self_healing_engine
+        self.runner = runner or SandboxedVerificationRunner(per_test_timeout=per_test_timeout)
+        self.self_healing_engine = self_healing_engine or SelfHealingEngine(
+            provider=self.provider,
+            runner=self.runner,
+            budget_ceiling=budget_ceiling,
+        )
 
     def compile(
         self,
@@ -63,6 +62,7 @@ class ContractCompiler:
         max_retries: int = 3,
         headless_ci: bool = False,
         workspace_root: Path | None = None,
+        skip_verification: bool = False,
     ) -> CompilationResult:
         """Executes full dual-synthesis compilation pipeline."""
         contract_file = Path(contract_path)
@@ -125,33 +125,39 @@ class ContractCompiler:
             stage_path / "test_contract.py",
         ]
 
-        # 4. Optional verification and self-healing (hooked in US2)
-        verification_report = None
-        iterations_used = 0
-
-        if self.self_healing_engine:
-            converged, latest_code, verification_report = self.self_healing_engine.run_loop(
-                contract=ast,
-                staging_dir=stage_path,
-                initial_agent_code=agent_code,
-                test_file=stage_path / "test_contract.py",
+        if skip_verification:
+            return CompilationResult(
+                success=True,
+                promoted=False,
+                iterations_used=0,
                 telemetry=telemetry,
+                generated_files=generated_files,
             )
-            if not converged:
-                return CompilationResult(
-                    success=False,
-                    promoted=False,
-                    iterations_used=max_retries,
-                    telemetry=telemetry,
-                    verification_report=verification_report,
-                    generated_files=generated_files,
-                    error_message="Verification failed: Self-healing retries exhausted.",
-                )
+
+        # 4. Self-healing verification loop
+        converged, final_code, verification_report = self.self_healing_engine.run_loop(
+            contract=ast,
+            staging_dir=stage_path,
+            initial_agent_code=agent_code,
+            test_file=stage_path / "test_contract.py",
+            telemetry=telemetry,
+        )
+
+        if not converged:
+            return CompilationResult(
+                success=False,
+                promoted=False,
+                iterations_used=max_retries,
+                telemetry=telemetry,
+                verification_report=verification_report,
+                generated_files=generated_files,
+                error_message="Verification failed: Self-healing retries exhausted.",
+            )
 
         return CompilationResult(
             success=True,
             promoted=False,
-            iterations_used=iterations_used,
+            iterations_used=1,
             telemetry=telemetry,
             verification_report=verification_report,
             generated_files=generated_files,
