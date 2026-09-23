@@ -17,7 +17,7 @@ def validate_output_path(
 
     Args:
         path: Destination file or directory path.
-        workspace_root: Base workspace root (defaults to current working directory).
+        workspace_root: Base workspace root (optional; inferred if path contains allowed_dirs).
         allowed_dirs: Tuple of allowed relative root directory names (e.g. ("dist",)).
 
     Returns:
@@ -26,14 +26,27 @@ def validate_output_path(
     Raises:
         IsolationSecurityError: If path traverses outside allowed directories or targets services/.
     """
-    root = (workspace_root or Path.cwd()).resolve()
-    target = Path(path)
-    if not target.is_absolute():
-        target = (root / target).resolve()
-    else:
-        target = target.resolve()
+    target = Path(path).resolve()
 
-    # Check that target is inside workspace root
+    # Explicitly prohibit any write to services/
+    if "services" in target.parts:
+        raise IsolationSecurityError(
+            f"Isolation violation: Writes to human service directory 'services/' are strictly prohibited (attempted: '{path}')."
+        )
+
+    if workspace_root is not None:
+        root = workspace_root.resolve()
+    else:
+        # If target path contains an allowed dir, infer root from the parent of the allowed dir
+        found_root: Path | None = None
+        for allowed in allowed_dirs:
+            if allowed in target.parts:
+                idx = target.parts.index(allowed)
+                found_root = Path(*target.parts[:idx])
+                break
+        root = found_root.resolve() if found_root is not None else Path.cwd().resolve()
+
+    # Check that target is inside inferred or provided root
     try:
         rel = target.relative_to(root)
     except ValueError as exc:
@@ -41,14 +54,8 @@ def validate_output_path(
             f"Path traversal detected: '{path}' escapes workspace root '{root}'."
         ) from exc
 
-    # Explicitly prohibit any write to services/
-    parts = rel.parts
-    if parts and parts[0] == "services":
-        raise IsolationSecurityError(
-            f"Isolation violation: Writes to human service directory 'services/' are strictly prohibited (attempted: '{path}')."
-        )
-
     # Ensure path belongs to one of the allowed directories (e.g. 'dist')
+    parts = rel.parts
     if not parts or parts[0] not in allowed_dirs:
         raise IsolationSecurityError(
             f"Isolation violation: Target path '{path}' must be inside allowed directories {allowed_dirs}, got '{rel}'."
