@@ -4,13 +4,31 @@ build-backend = "hatchling.build"
 
 [project]
 name = "contract-agent"
-version = "0.1.0"
+version = "0.2.5"
 description = "A Spec-Driven Behavioral Contract & Verification Engine for Tool-Using AI Agents"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [
-    { name = "Stefano", email = "stefano@example.com" }
+    { name = "Stefano Sello", email = "sellostefano@gmail.com" }
+]
+keywords = [
+    "ai-agents",
+    "cel",
+    "formal-verification",
+    "invariants",
+    "llm-guardrails",
+    "spec-driven-development",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "pydantic>=2.7.0",
@@ -19,6 +37,12 @@ dependencies = [
     "typer>=0.12.0",
     "rich>=13.7.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/stefanosello/contract-agent"
+Repository = "https://github.com/stefanosello/contract-agent"
+Issues = "https://github.com/stefanosello/contract-agent/issues"
+Documentation = "https://github.com/stefanosello/contract-agent#readme"
 
 [tool.pyrefly.errors]
 redundant-cast = "warn"
