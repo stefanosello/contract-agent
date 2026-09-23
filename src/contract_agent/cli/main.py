@@ -82,6 +82,12 @@ def compile(
 
     if not result.success:
         console.print(f"[bold red]❌ Compilation failed:[/bold red] {result.error_message}")
+        if result.verification_report and result.verification_report.failures:
+            console.print("[bold yellow]Diagnostics:[/bold yellow]")
+            for failure in result.verification_report.failures:
+                console.print(f"  [yellow]• {failure.test_name}:[/yellow] {failure.assertion_error}")
+        elif result.verification_report and result.verification_report.raw_output:
+            console.print(f"[dim]{result.verification_report.raw_output.strip()}[/dim]")
         sys.exit(2)
 
     console.print("[bold green]✔ Invariant verification passed 100%.[/bold green]")

@@ -27,7 +27,7 @@ from contract_agent.runtime.cel_engine import CELEngine
 from contract_agent.runtime.context import WorkflowContext
 from contract_agent.runtime.guards import GuardInterceptor
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 __all__ = [
     "BudgetExceededError",
