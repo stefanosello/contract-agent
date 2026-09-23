@@ -1,12 +1,16 @@
 """Unit tests for GuardInterceptor runtime enforcement."""
 
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
+from contract_agent.core.exceptions import (
+    ApprovalRequiredError,
+    InvariantViolationError,
+)
 from contract_agent.core.parser import ContractParser
-from contract_agent.core.exceptions import ApprovalRequiredError, InvariantViolationError
-from contract_agent.runtime.guards import GuardInterceptor
 from contract_agent.runtime.context import WorkflowContext
+from contract_agent.runtime.guards import GuardInterceptor
 
 SAMPLE_CONTRACT = {
     "spec_version": "0.3",
@@ -95,7 +99,9 @@ def test_guard_requires_escalation_for_high_amount():
     assert exc.value.resource_id == "INV-10"
 
     # Grant approval out-of-band
-    ctx.approval_store.grant_approval("manager_signoff", "INV-10", granted_by="vp_finance")
+    ctx.approval_store.grant_approval(
+        "manager_signoff", "INV-10", granted_by="vp_finance"
+    )
 
     # Retry -> Should succeed now
     guarded_refund(invoice_id="INV-10", amount_cents=35000)
@@ -115,3 +121,39 @@ async def test_async_guard_wrapper():
     assert res["invoice_id"] == "INV-1"
     async_fetch_mock.assert_called_once_with(invoice_id="INV-1")
     assert ctx.called_before("fetch_invoice", "execute_refund", "INV-1") is True
+
+
+def test_guard_block_tool_call_returns_payload():
+    contract_data = {
+        "spec_version": "0.3",
+        "metadata": {"name": "soft_block_agent"},
+        "invariants": [
+            {
+                "id": "INV-BLOCK",
+                "target": "tool:execute_refund",
+                "description": "Exceeded limit",
+                "rule": "args.amount_cents <= 1000",
+                "on_violation": "block_tool_call",
+            }
+        ],
+        "tools": [
+            {
+                "name": "execute_refund",
+                "description": "Refund tool",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"amount_cents": {"type": "integer"}},
+                },
+            }
+        ],
+    }
+    ast = ContractParser.from_dict(contract_data)
+    interceptor = GuardInterceptor(ast)
+    mock_handler = MagicMock()
+    guarded_refund = interceptor.wrap_tool("execute_refund", mock_handler)
+
+    result = guarded_refund(amount_cents=5000)
+    mock_handler.assert_not_called()
+    assert isinstance(result, dict)
+    assert "error" in result
+    assert "INV-BLOCK" in result["error"]

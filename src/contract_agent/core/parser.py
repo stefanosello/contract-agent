@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any
+
 import yaml
 from pydantic import ValidationError
 
@@ -26,7 +27,8 @@ class ContractParser:
                 raw_data = yaml.safe_load(f)
         except yaml.YAMLError as exc:
             raise ContractValidationError(
-                f"YAML parsing error in {file_path}: {exc}", details={"raw_error": str(exc)}
+                f"YAML parsing error in {file_path}: {exc}",
+                details={"raw_error": str(exc)},
             ) from exc
 
         if not isinstance(raw_data, dict):
@@ -37,7 +39,7 @@ class ContractParser:
         return cls.from_dict(raw_data)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ContractAST:
+    def from_dict(cls, data: dict[str, Any]) -> ContractAST:
         """Validate and semantically inspect contract dictionary."""
         try:
             ast = ContractAST.model_validate(data)
@@ -47,7 +49,8 @@ class ContractParser:
                 loc = ".".join(str(x) for x in e["loc"])
                 errors_summary.append(f"{loc}: {e['msg']}")
             raise ContractValidationError(
-                "Contract schema validation failed:\n  - " + "\n  - ".join(errors_summary),
+                "Contract schema validation failed:\n  - "
+                + "\n  - ".join(errors_summary),
                 details={"errors": err.errors()},
             ) from err
 
@@ -56,17 +59,26 @@ class ContractParser:
 
     @classmethod
     def _perform_semantic_checks(cls, ast: ContractAST) -> None:
-        """Verifies cross-field referential integrity."""
-        tool_names: Set[str] = {tool.name for tool in ast.tools}
+        """Verifies cross-field referential integrity, CEL syntax, and parameter bindings."""
+        import re
 
-        # 1. Check duplicate invariant IDs
-        seen_inv_ids: Set[str] = set()
+        import celpy
+
+        tool_names: set[str] = {tool.name for tool in ast.tools}
+        tools_by_name = {tool.name: tool for tool in ast.tools}
+        cel_env = celpy.Environment()
+
+        # 1. Check duplicate invariant IDs & static CEL compilation & parameter binding
+        seen_inv_ids: set[str] = set()
         for inv in ast.invariants:
             if inv.id in seen_inv_ids:
-                raise ContractValidationError(f"Duplicate invariant ID detected: '{inv.id}'")
+                raise ContractValidationError(
+                    f"Duplicate invariant ID detected: '{inv.id}'"
+                )
             seen_inv_ids.add(inv.id)
 
             # Check target tool existence if target starts with 'tool:'
+            target_tool = None
             if inv.target.startswith("tool:"):
                 target_tool = inv.target.split("tool:", 1)[1]
                 if target_tool not in tool_names:
@@ -74,11 +86,37 @@ class ContractParser:
                         f"Invariant '{inv.id}' references undefined tool '{target_tool}'"
                     )
 
+            # Static CEL compilation check
+            try:
+                cel_env.compile(inv.rule)
+            except Exception as exc:
+                raise ContractValidationError(
+                    f"Invariant '{inv.id}' contains invalid CEL expression '{inv.rule}': {exc}"
+                ) from exc
+
+            # Static parameter schema binding check for tool-scoped invariants
+            if target_tool and target_tool in tools_by_name:
+                tool_contract = tools_by_name[target_tool]
+                param_schema = tool_contract.parameters or {}
+                properties = param_schema.get("properties", {})
+                referenced_args = set(
+                    re.findall(r"\bargs\.([a-zA-Z_][a-zA-Z0-9_]*)", inv.rule)
+                )
+                if properties:
+                    for arg in referenced_args:
+                        if arg not in properties:
+                            raise ContractValidationError(
+                                f"Invariant '{inv.id}' references undefined parameter 'args.{arg}' "
+                                f"which is not declared in tool '{target_tool}' parameters schema"
+                            )
+
         # 2. Check duplicate scenario IDs & tool call references
-        seen_scen_ids: Set[str] = set()
+        seen_scen_ids: set[str] = set()
         for scen in ast.scenarios:
             if scen.id in seen_scen_ids:
-                raise ContractValidationError(f"Duplicate scenario ID detected: '{scen.id}'")
+                raise ContractValidationError(
+                    f"Duplicate scenario ID detected: '{scen.id}'"
+                )
             seen_scen_ids.add(scen.id)
 
             for step in scen.expected_flow:

@@ -1,11 +1,10 @@
 """Automated Mutation Safety Verification in CI: Rogue Mutant bypass prevention tests."""
 
 from unittest.mock import MagicMock
-import pytest
 
 from contract_agent.core.parser import ContractParser
-from contract_agent.runtime.guards import GuardInterceptor
 from contract_agent.runtime.context import WorkflowContext
+from contract_agent.runtime.guards import GuardInterceptor
 from contract_agent.testing.mutants import run_mutation_safety_suite
 
 CONTRACT_WITH_GUARDS = {
@@ -64,3 +63,19 @@ def test_mutation_safety_suite_traps_all_attacks():
 
     # Assert dangerous mutation handler was NEVER called by any rogue attack!
     refund_backend.assert_not_called()
+
+
+def test_rogue_mutant_runner_class():
+    from contract_agent.testing.mutants import RogueMutantRunner
+
+    ast = ContractParser.from_dict(CONTRACT_WITH_GUARDS)
+    ctx = WorkflowContext()
+    interceptor = GuardInterceptor(ast, context=ctx)
+
+    runner = RogueMutantRunner(ast=ast, interceptor=interceptor)
+    report = runner.run_all_mutants()
+
+    assert report.total_attacks >= 4
+    assert report.escaped_attacks == 0
+    assert report.escape_rate == 0.0
+    assert report.passed is True

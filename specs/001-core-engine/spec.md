@@ -8,6 +8,15 @@
 
 **Input**: User description: "ContractAgent MVP: Core CEL Invariant Engine and AST Parser"
 
+## Clarifications
+
+### Session 2026-09-23
+- Q: Should `ContractParser` statically parse and type-check all CEL invariant expressions against the declared tool parameter schemas during contract loading, or defer CEL compilation until runtime initialization? → A: Option A — Static CEL & schema validation at parse time (`ContractParser` validates CEL syntax and parameter references against tool schemas, raising `ContractValidationError` on syntax errors or invalid fields).
+- Q: How should the runtime `GuardInterceptor` dispatch the three invariant violation actions (`raise_invariant_violation`, `block_tool_call`, and `require_escalation`) when an invariant evaluates to `False`? → A: Option A — Differentiated dispatch (`raise_invariant_violation` raises `InvariantViolationError`, `block_tool_call` returns a blocked tool error payload to the agent, and `require_escalation` raises `EscalationRequiredError` with approval metadata).
+- Q: Should the custom CEL workflow functions (`workflow.called_before` and `workflow.call_count`) support both resource-correlated and global sequence overloads? → A: Option A — Overloaded signatures (support both global checks and resource-correlated overloads matching parameter values).
+- Q: How should the Hypothesis property-based fuzzer generate test inputs for tool invariants during Zero-LLM verification? → A: Schema-driven with custom override (automatic JSON Schema strategy synthesis by default, with support for manual developer-supplied strategy overrides).
+- Q: Which mutation vectors should the built-in Rogue Mutant Agent test fixture simulate during automated CI mutation testing? → A: Option A — Comprehensive multi-vector suite (test numerical threshold exceedance, out-of-order/skipped prerequisites, and missing human approval tokens).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Declarative Contract Parsing & Validation (Priority: P1)
@@ -94,14 +103,14 @@ As a CI pipeline, I want an automated Rogue Mutant test fixture that deliberatel
 
 ### Functional Requirements
 
-- **FR-001**: System MUST load and parse YAML contract files into typed Pydantic V2 AST models.
+- **FR-001**: System MUST load and parse YAML contract files into typed Pydantic V2 AST models, performing static CEL syntax compilation and parameter schema validation at parse time.
 - **FR-002**: System MUST compile CEL expressions using a verified CEL environment.
-- **FR-003**: System MUST provide custom CEL functions: `workflow.has_approval`, `workflow.called_before`, and `workflow.call_count`.
+- **FR-003**: System MUST provide custom CEL functions with overloaded signatures: `workflow.has_approval(type, resource_id)`, `workflow.called_before(prior, target)` / `workflow.called_before(prior, target, correlation_id)`, and `workflow.call_count(tool)` / `workflow.call_count(tool, correlation_id)`.
 - **FR-004**: System MUST evaluate invariants deterministically with zero network calls or LLM queries.
-- **FR-005**: System MUST provide a `GuardInterceptor` that intercepts tool calls before execution.
+- **FR-005**: System MUST provide a `GuardInterceptor` that intercepts tool calls before execution and dispatches violation actions accordingly (`raise_invariant_violation` raises `InvariantViolationError`, `block_tool_call` returns a blocked payload, `require_escalation` raises `EscalationRequiredError`).
 - **FR-006**: System MUST fail closed on any invariant violation or evaluation error.
-- **FR-007**: System MUST provide automated Hypothesis fuzzing utilities to test CEL rule logic.
-- **FR-008**: System MUST include a checked-in Rogue Mutant Agent fixture for automated mutation testing in CI.
+- **FR-007**: System MUST provide automated Hypothesis fuzzing utilities that synthesize input strategies directly from tool parameter schemas by default, while supporting custom user-defined strategy overrides.
+- **FR-008**: System MUST include a checked-in Rogue Mutant Agent fixture for automated mutation testing in CI covering numerical threshold exceedance, out-of-order sequence violations, and missing approval tokens.
 
 ### Key Entities
 

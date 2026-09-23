@@ -3,23 +3,29 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, cast
+from typing import Any, cast
+
 import celpy
 from celpy import celtypes
 
 from contract_agent.core.ast import Invariant
-from contract_agent.core.exceptions import ContractValidationError, InvariantViolationError
+from contract_agent.core.exceptions import (
+    ContractValidationError,
+    InvariantViolationError,
+)
 from contract_agent.runtime.context import WorkflowContext
 
 
 @dataclass
 class InvariantResult:
     """Result of an invariant evaluation."""
+
     invariant_id: str
     is_valid: bool
     evaluation_time_ms: float
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class CELEngine:
@@ -27,13 +33,14 @@ class CELEngine:
 
     def __init__(self) -> None:
         self.env = celpy.Environment()
-        self._compiled_cache: Dict[str, celpy.Runner] = {}
+        self._compiled_cache: dict[str, celpy.Runner] = {}
 
     def compile_rule(self, rule_str: str) -> celpy.Runner:
         """Compile a CEL rule expression into an executable program."""
         if rule_str not in self._compiled_cache:
             try:
                 ast = self.env.compile(rule_str)
+
                 # We register the standard extension functions
                 def _trim_fn(s: Any) -> celtypes.StringType:
                     return celtypes.StringType(str(s).strip())
@@ -44,7 +51,7 @@ class CELEngine:
                 def _upper_fn(s: Any) -> celtypes.StringType:
                     return celtypes.StringType(str(s).upper())
 
-                functions: Dict[str, Callable[..., Any]] = {
+                functions: dict[str, Callable[..., Any]] = {
                     # Custom workflow functions
                     "has_approval": self._make_has_approval_fn(),
                     "called_before": self._make_called_before_fn(),
@@ -65,15 +72,15 @@ class CELEngine:
     def evaluate_rule(
         self,
         rule_str: str,
-        args: Dict[str, Any],
-        context: Optional[WorkflowContext] = None,
+        args: dict[str, Any],
+        context: WorkflowContext | None = None,
     ) -> bool:
         """Evaluate a compiled CEL rule against tool args and workflow context."""
         prgm = self.compile_rule(rule_str)
         wf_ctx = context or WorkflowContext()
 
         # Build activation context
-        activation: Dict[str, Any] = {
+        activation: dict[str, Any] = {
             "args": celpy.json_to_cel(args),
             "workflow": celpy.json_to_cel({"id": "current_workflow"}),
             "_wf_instance": wf_ctx,
@@ -97,8 +104,8 @@ class CELEngine:
         self,
         invariant: Invariant,
         tool_name: str,
-        args: Dict[str, Any],
-        context: Optional[WorkflowContext] = None,
+        args: dict[str, Any],
+        context: WorkflowContext | None = None,
     ) -> InvariantResult:
         """Evaluates a single invariant against tool args and context."""
         start_time = time.perf_counter()
@@ -120,7 +127,7 @@ class CELEngine:
                 is_valid=True,
                 evaluation_time_ms=duration_ms,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - Invariant evaluation must fail-closed on any error
             duration_ms = (time.perf_counter() - start_time) * 1000.0
             return InvariantResult(
                 invariant_id=invariant.id,
@@ -131,6 +138,7 @@ class CELEngine:
 
     def _make_has_approval_fn(self) -> Callable[..., celtypes.BoolType]:
         """Supports both has_approval(type, id) and workflow.has_approval(type, id)."""
+
         def _fn(*args: Any) -> celtypes.BoolType:
             ctx = getattr(self, "_active_context", None)
             if not ctx:
@@ -142,10 +150,12 @@ class CELEngine:
             else:
                 return celtypes.BoolType(False)
             return celtypes.BoolType(ctx.has_approval(appr_type, res_id))
+
         return _fn
 
     def _make_called_before_fn(self) -> Callable[..., celtypes.BoolType]:
         """Supports both called_before(prior, target, res_id) and workflow.called_before(...)."""
+
         def _fn(*args: Any) -> celtypes.BoolType:
             ctx = getattr(self, "_active_context", None)
             if not ctx:
@@ -164,14 +174,31 @@ class CELEngine:
             else:
                 return celtypes.BoolType(False)
             return celtypes.BoolType(ctx.called_before(prior, target, res_id))
+
         return _fn
 
     def _make_call_count_fn(self) -> Callable[..., celtypes.IntType]:
-        """Supports both call_count(tool_name) and workflow.call_count(tool_name)."""
+        """Supports call_count(tool), call_count(tool, correlation_id), and workflow.call_count(...)."""
+
         def _fn(*args: Any) -> celtypes.IntType:
             ctx = getattr(self, "_active_context", None)
             if not ctx:
                 return celtypes.IntType(0)
-            tool_name = str(args[0]) if len(args) == 1 else str(args[1])
-            return celtypes.IntType(ctx.call_count(tool_name))
+            if len(args) == 1:
+                tool_name = str(args[0])
+                res_id = None
+            elif len(args) == 2:
+                if isinstance(args[0], (celtypes.MapType, dict)):
+                    tool_name = str(args[1])
+                    res_id = None
+                else:
+                    tool_name = str(args[0])
+                    res_id = str(args[1])
+            elif len(args) >= 3:
+                tool_name = str(args[1])
+                res_id = str(args[2])
+            else:
+                return celtypes.IntType(0)
+            return celtypes.IntType(ctx.call_count(tool_name, res_id))
+
         return _fn

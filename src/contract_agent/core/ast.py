@@ -2,33 +2,40 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Metadata(BaseModel):
     name: str = Field(..., description="Unique machine-readable name of the agent")
     version: str = Field(default="0.1.0", description="Semver version string")
-    description: Optional[str] = Field(None, description="Human readable description")
+    description: str | None = Field(None, description="Human readable description")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class SystemConfig(BaseModel):
     role: str = Field(..., description="System persona and domain role")
-    guidelines: List[str] = Field(default_factory=list, description="Operational guidelines")
+    guidelines: list[str] = Field(
+        default_factory=list, description="Operational guidelines"
+    )
 
     model_config = ConfigDict(extra="forbid")
 
 
 class Invariant(BaseModel):
-    id: str = Field(..., description="Unique identifier for the invariant (e.g. INV-001)")
+    id: str = Field(
+        ..., description="Unique identifier for the invariant (e.g. INV-001)"
+    )
     target: str = Field(
         ...,
         description="Target scope for enforcement (e.g. tool:execute_refund or session:call_sequence)",
     )
     description: str = Field(..., description="Human-readable policy rationale")
-    rule: str = Field(..., description="Google Common Expression Language (CEL) boolean rule")
+    rule: str = Field(
+        ..., description="Google Common Expression Language (CEL) boolean rule"
+    )
     on_violation: Literal[
         "raise_invariant_violation", "block_tool_call", "require_escalation"
     ] = Field(
@@ -56,13 +63,13 @@ class Invariant(BaseModel):
 class ToolContract(BaseModel):
     name: str = Field(..., description="Function name of the tool")
     description: str = Field(..., description="Documentation for the tool")
-    parameters: Dict[str, Any] = Field(
+    parameters: dict[str, Any] = Field(
         default_factory=dict, description="JSON Schema object for inputs"
     )
-    returns: Dict[str, Any] = Field(
+    returns: dict[str, Any] = Field(
         default_factory=dict, description="JSON Schema object for return payload"
     )
-    constraints: Dict[str, Any] = Field(
+    constraints: dict[str, Any] = Field(
         default_factory=dict, description="Optional static tool constraints"
     )
 
@@ -77,10 +84,16 @@ class ToolContract(BaseModel):
 
 
 class ScenarioExpectation(BaseModel):
-    tool_call: Optional[str] = Field(None, description="Expected tool invoked at this step")
-    with_args: Optional[Dict[str, Any]] = Field(None, description="Expected tool arguments")
-    never_call: Optional[str] = Field(None, description="Tool that MUST NOT be called at this step")
-    response_contains: Optional[List[str]] = Field(
+    tool_call: str | None = Field(
+        None, description="Expected tool invoked at this step"
+    )
+    with_args: dict[str, Any] | None = Field(
+        None, description="Expected tool arguments"
+    )
+    never_call: str | None = Field(
+        None, description="Tool that MUST NOT be called at this step"
+    )
+    response_contains: list[str] | None = Field(
         None, description="Keywords or phrases expected in final agent response"
     )
 
@@ -90,11 +103,13 @@ class ScenarioExpectation(BaseModel):
 class Scenario(BaseModel):
     id: str = Field(..., description="Unique scenario ID (e.g. SCEN-001)")
     title: str = Field(..., description="Descriptive scenario title")
-    context: Dict[str, Any] = Field(
+    context: dict[str, Any] = Field(
         default_factory=dict, description="Mock state fixture for the scenario"
     )
-    user_input: str = Field(..., description="Natural language prompt sent to the agent")
-    expected_flow: List[ScenarioExpectation] = Field(
+    user_input: str = Field(
+        ..., description="Natural language prompt sent to the agent"
+    )
+    expected_flow: list[ScenarioExpectation] = Field(
         default_factory=list, description="Sequence of expected actions and assertions"
     )
 
@@ -102,26 +117,28 @@ class Scenario(BaseModel):
 
 
 class ContractAST(BaseModel):
-    spec_version: str = Field(default="0.3", description="ContractAgent specification schema version")
+    spec_version: str = Field(
+        default="0.3", description="ContractAgent specification schema version"
+    )
     metadata: Metadata
-    system: Optional[SystemConfig] = None
-    invariants: List[Invariant] = Field(default_factory=list)
-    tools: List[ToolContract] = Field(default_factory=list)
-    scenarios: List[Scenario] = Field(default_factory=list)
+    system: SystemConfig | None = None
+    invariants: list[Invariant] = Field(default_factory=list)
+    tools: list[ToolContract] = Field(default_factory=list)
+    scenarios: list[Scenario] = Field(default_factory=list)
 
     model_config = ConfigDict(extra="forbid")
 
-    def get_tool(self, name: str) -> Optional[ToolContract]:
+    def get_tool(self, name: str) -> ToolContract | None:
         """Look up a tool contract by name."""
         for tool in self.tools:
             if tool.name == name:
                 return tool
         return None
 
-    def get_invariants_for_tool(self, tool_name: str) -> List[Invariant]:
+    def get_invariants_for_tool(self, tool_name: str) -> list[Invariant]:
         """Return all invariants scoped to a specific tool."""
         tool_target = f"tool:{tool_name}"
-        matching: List[Invariant] = []
+        matching: list[Invariant] = []
 
         for inv in self.invariants:
             if inv.target == tool_target or inv.target == "*":
@@ -136,8 +153,12 @@ class ContractAST(BaseModel):
                     if quoted_target1 in inv.rule or quoted_target2 in inv.rule:
                         parts = inv.rule.split("called_before", 1)[1]
                         # If tool_name is the second argument in called_before, it gates this tool
-                        if f", {quoted_target1}" in parts or f",{quoted_target1}" in parts or \
-                           f", {quoted_target2}" in parts or f",{quoted_target2}" in parts:
+                        if (
+                            f", {quoted_target1}" in parts
+                            or f",{quoted_target1}" in parts
+                            or f", {quoted_target2}" in parts
+                            or f",{quoted_target2}" in parts
+                        ):
                             matching.append(inv)
                 else:
                     # Generic session rule mentioning tool

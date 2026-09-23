@@ -1,6 +1,8 @@
 """Exceptions for the ContractAgent framework."""
 
-from typing import Any, Dict, Optional
+from __future__ import annotations
+
+from typing import Any
 
 
 class ContractAgentError(Exception):
@@ -10,7 +12,7 @@ class ContractAgentError(Exception):
 class ContractValidationError(ContractAgentError):
     """Raised when a contract specification fails syntax or schema validation."""
 
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(message)
         self.details = details or {}
 
@@ -23,17 +25,19 @@ class InvariantViolationError(ContractAgentError):
         invariant_id: str,
         message: str,
         tool_name: str,
-        args: Dict[str, Any],
+        args: dict[str, Any],
         on_violation: str = "raise_invariant_violation",
     ) -> None:
-        formatted_message = f"Invariant {invariant_id} violated for tool '{tool_name}': {message}"
+        formatted_message = (
+            f"Invariant {invariant_id} violated for tool '{tool_name}': {message}"
+        )
         super().__init__(formatted_message)
         self.invariant_id = invariant_id
         self.tool_name = tool_name
         self.tool_args = args
         self.on_violation = on_violation
 
-    def to_diagnostic_payload(self) -> Dict[str, Any]:
+    def to_diagnostic_payload(self) -> dict[str, Any]:
         """Returns structured diagnostic dictionary for agent scratchpad or telemetry."""
         return {
             "error_type": "INVARIANT_VIOLATION",
@@ -44,7 +48,7 @@ class InvariantViolationError(ContractAgentError):
         }
 
 
-class ApprovalRequiredError(InvariantViolationError):
+class EscalationRequiredError(InvariantViolationError):
     """Raised when an invariant requires asynchronous manager or human sign-off."""
 
     def __init__(
@@ -53,11 +57,10 @@ class ApprovalRequiredError(InvariantViolationError):
         tool_name: str,
         approval_type: str,
         resource_id: str,
-        args: Dict[str, Any],
+        args: dict[str, Any],
+        prompt: str | None = None,
     ) -> None:
-        message = (
-            f"Action requires verified '{approval_type}' approval for resource '{resource_id}'."
-        )
+        message = f"Action requires verified '{approval_type}' approval for resource '{resource_id}'."
         super().__init__(
             invariant_id=invariant_id,
             message=message,
@@ -67,3 +70,29 @@ class ApprovalRequiredError(InvariantViolationError):
         )
         self.approval_type = approval_type
         self.resource_id = resource_id
+        self.prompt = prompt or f"Sign-off required: {approval_type} on {resource_id}"
+
+    def to_diagnostic_payload(self) -> dict[str, Any]:
+        """Returns structured diagnostic dictionary including escalation requirements."""
+        payload = super().to_diagnostic_payload()
+        payload.update(
+            {
+                "error_type": "ESCALATION_REQUIRED",
+                "approval_type": self.approval_type,
+                "resource_id": self.resource_id,
+                "prompt": self.prompt,
+            }
+        )
+        return payload
+
+
+# Backward compatibility alias
+ApprovalRequiredError = EscalationRequiredError
+
+
+class CELEvaluationError(ContractAgentError):
+    """Raised on internal CEL runtime execution fault."""
+
+    def __init__(self, message: str, rule: str | None = None) -> None:
+        super().__init__(message)
+        self.rule = rule
