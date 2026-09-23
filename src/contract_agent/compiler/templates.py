@@ -35,9 +35,9 @@ from typing import Any
 from contract_agent.runtime.guards import GuardInterceptor
 
 try:
-    from dist.interface import AgentToolsProtocol
+    from interface import AgentToolsProtocol
 except ImportError:
-    from interface import AgentToolsProtocol  # type: ignore[no-redef]
+    from dist.interface import AgentToolsProtocol  # type: ignore[no-redef]
 
 
 class AgentState(str, Enum):
@@ -129,11 +129,21 @@ from contract_agent.runtime.guards import GuardInterceptor
 from contract_agent.runtime.context import WorkflowContext
 
 try:
-    from dist.agent import {agent_class}, AgentState
-    from dist.mocks import MockAgentTools
+    from agent import {agent_class}
+    from mocks import MockAgentTools
 except ImportError:
-    from agent import {agent_class}, AgentState  # type: ignore[no-redef]
-    from mocks import MockAgentTools  # type: ignore[no-redef]
+    from dist.agent import {agent_class}  # type: ignore[no-redef]
+    from dist.mocks import MockAgentTools  # type: ignore[no-redef]
+
+try:
+    from agent import AgentState
+except ImportError:
+    try:
+        from dist.agent import AgentState  # type: ignore[no-redef]
+    except ImportError:
+        class AgentState:  # type: ignore[no-redef]
+            COMPLETED = "COMPLETED"
+            FAILED = "FAILED"
 
 
 {tests_body}

@@ -32,9 +32,8 @@ class SandboxedVerificationRunner:
         # Build clean environment with PYTHONPATH pointing to working_dir and src
         env = os.environ.copy()
         current_pythonpath = env.get("PYTHONPATH", "")
-        repo_root = str(Path.cwd().resolve())
         src_root = str((Path.cwd() / "src").resolve())
-        env["PYTHONPATH"] = f"{work_path}:{src_root}:{repo_root}:{current_pythonpath}"
+        env["PYTHONPATH"] = f"{work_path}:{src_root}:{current_pythonpath}"
 
         cmd = [
             sys.executable,
