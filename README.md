@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="160" alt="ContractAgent Logo" />
+  <img src="assets/logo.svg" width="140" alt="ContractAgent Logo" />
 </p>
 
 <h1 align="center">ContractAgent</h1>

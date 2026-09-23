@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <!-- Background Glow Gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Shield Border Gradient -->
+    <linearGradient id="shieldStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#C084FC"/>
+    </linearGradient>
+
+    <!-- Shield Fill Gradient -->
+    <linearGradient id="shieldFill" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Core Geometry Gradient -->
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+
+    <!-- Secondary Node Gradient -->
+    <linearGradient id="accentGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Backdrop -->
+  <circle cx="64" cy="64" r="60" fill="url(#bgGlow)"/>
+
+  <!-- Outer Protective Shield -->
+  <path d="M 64 14 
+           L 106 32 
+           C 106 72 82 102 64 114 
+           C 46 102 22 72 22 32 
+           Z" 
+        fill="url(#shieldFill)" 
+        stroke="url(#shieldStroke)" 
+        stroke-width="2.5" 
+        stroke-linejoin="round"/>
+
+  <!-- Inner Precision Grid / Invariant Lines -->
+  <path d="M 64 22 L 64 104" 
+        stroke="#6366F1" 
+        stroke-width="1" 
+        stroke-dasharray="2 3" 
+        stroke-opacity="0.4"/>
+  <path d="M 32 64 L 96 64" 
+        stroke="#6366F1" 
+        stroke-width="1" 
+        stroke-dasharray="2 3" 
+        stroke-opacity="0.4"/>
+
+  <!-- Left Contract Guard Bracket [ -->
+  <path d="M 48 42 L 38 42 C 36.5 42 35 43.5 35 45 L 35 83 C 35 84.5 36.5 86 38 86 L 48 86" 
+        stroke="url(#coreGrad)" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+
+  <!-- Right Contract Guard Bracket ] -->
+  <path d="M 80 42 L 90 42 C 91.5 42 93 43.5 93 45 L 93 83 C 93 84.5 91.5 86 90 86 L 80 86" 
+        stroke="url(#coreGrad)" 
+        stroke-width="3" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+
+  <!-- Central Dynamic Agent Glyph (Faceted Geometric Delta / Prism) -->
+  <path d="M 64 45 L 77 68 L 51 68 Z" 
+        fill="url(#accentGrad)" 
+        fill-opacity="0.25" 
+        stroke="url(#shieldStroke)" 
+        stroke-width="2.2" 
+        stroke-linejoin="round"/>
+
+  <!-- Invariant Core Node -->
+  <circle cx="64" cy="68" r="3" fill="#38BDF8"/>
+  <path d="M 64 68 L 64 83" 
+        stroke="url(#coreGrad)" 
+        stroke-width="2" 
+        stroke-linecap="round"/>
+  <circle cx="64" cy="83" r="2.5" fill="#C084FC"/>
+</svg>
