@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -11,6 +12,7 @@ from rich.console import Console
 from contract_agent.cli.review import ReviewGate
 from contract_agent.compiler.orchestrator import ContractCompiler
 from contract_agent.compiler.providers import get_provider
+from contract_agent.compiler.telemetry import format_telemetry_summary
 from contract_agent.core.exceptions import (
     BudgetExceededError,
     ContractValidationError,
@@ -25,16 +27,29 @@ app = typer.Typer(
 console = Console()
 
 
-@app.command()
+@app.callback()
+def callback() -> None:
+    """ContractAgent behavioral contract and verification compiler."""
+
+
+@app.command(name="version")
+def version() -> None:
+    """Display ContractAgent framework version."""
+    from contract_agent import __version__
+
+    console.print(f"[bold cyan]ContractAgent[/bold cyan] version {__version__}")
+
+
+@app.command(name="compile")
 def compile(
-    contract_path: Path = typer.Argument(..., help="Path to input agent.contract.yaml"),
-    output_dir: Path = typer.Option(Path("dist"), "--output-dir", help="Directory for verified artifacts"),
-    staging_dir: Path = typer.Option(Path("dist/.staging"), "--staging-dir", help="Ephemeral build directory"),
-    provider: str = typer.Option("mock", "--provider", help="LLM provider: mock, gemini-flash, deepseek"),
-    model: str | None = typer.Option(None, "--model", help="Model identifier override"),
-    max_retries: int = typer.Option(3, "--max-retries", help="Max self-healing retry iterations"),
-    budget_ceiling: float = typer.Option(0.05, "--budget-ceiling", help="Maximum budget in USD"),
-    headless_ci: bool = typer.Option(False, "--headless-ci", help="Run non-interactively in CI mode"),
+    contract_path: Annotated[Path, typer.Argument(help="Path to input agent.contract.yaml")],
+    output_dir: Annotated[Path, typer.Option("--output-dir", help="Directory for verified artifacts")] = Path("dist"),
+    staging_dir: Annotated[Path, typer.Option("--staging-dir", help="Ephemeral build directory")] = Path("dist/.staging"),
+    provider: Annotated[str, typer.Option("--provider", help="LLM provider: mock, gemini-flash, deepseek")] = "mock",
+    model: Annotated[str | None, typer.Option("--model", help="Model identifier override")] = None,
+    max_retries: Annotated[int, typer.Option("--max-retries", help="Max self-healing retry iterations")] = 3,
+    budget_ceiling: Annotated[float, typer.Option("--budget-ceiling", help="Maximum budget in USD")] = 0.05,
+    headless_ci: Annotated[bool, typer.Option("--headless-ci", help="Run non-interactively in CI mode")] = False,
 ) -> None:
     """Compiles behavioral contract into typed protocols, mocks, FSM agent, and tests."""
     console.print(f"[bold cyan]🔨 Compiling contract:[/bold cyan] {contract_path}")
@@ -70,7 +85,6 @@ def compile(
         sys.exit(2)
 
     console.print("[bold green]✔ Invariant verification passed 100%.[/bold green]")
-    from contract_agent.compiler.telemetry import format_telemetry_summary
     console.print(f"[dim]{format_telemetry_summary(result.telemetry)}[/dim]")
 
     # Review Gate promotion

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from contract_agent.core.ast import ContractAST, ToolContract
+from contract_agent.core.ast import ContractAST
 
 
 def _json_type_to_python(schema_type: str | None) -> str:

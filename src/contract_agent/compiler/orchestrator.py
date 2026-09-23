@@ -17,8 +17,8 @@ from contract_agent.compiler.models import (
     CostTelemetry,
 )
 from contract_agent.compiler.personas import (
-    AGENT_IMPLEMENTER_SYSTEM_PROMPT,
     ADVERSARIAL_TESTER_SYSTEM_PROMPT,
+    AGENT_IMPLEMENTER_SYSTEM_PROMPT,
     build_implementer_prompt,
     build_tester_prompt,
     extract_code_block,
@@ -70,7 +70,7 @@ class ContractCompiler:
         ast = ContractParser.from_file(contract_file)
 
         # 1. Path isolation validations
-        out_path = validate_output_path(output_dir, workspace_root=workspace_root)
+        validate_output_path(output_dir, workspace_root=workspace_root)
         stage_path = ensure_clean_staging_dir(staging_dir, workspace_root=workspace_root)
 
         telemetry = CostTelemetry()
@@ -138,7 +138,7 @@ class ContractCompiler:
             )
 
         # 4. Self-healing verification loop
-        converged, final_code, verification_report = self.self_healing_engine.run_loop(
+        converged, _final_code, verification_report = self.self_healing_engine.run_loop(
             contract=ast,
             staging_dir=stage_path,
             initial_agent_code=agent_code,

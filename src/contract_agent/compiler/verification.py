@@ -55,6 +55,7 @@ class SandboxedVerificationRunner:
                 capture_output=True,
                 text=True,
                 timeout=timeout_limit,
+                check=False,
             )
             elapsed = time.time() - start_time
             raw_output = proc.stdout + "\n" + proc.stderr

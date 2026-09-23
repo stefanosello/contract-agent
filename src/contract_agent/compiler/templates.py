@@ -92,7 +92,7 @@ def generate_default_test_suite(ast: ContractAST) -> str:
         for exp in sc.expected_flow:
             if exp.tool_call:
                 args_dict = exp.with_args or {}
-                kwargs_str = ", ".join(f"{k}={repr(v)}" for k, v in args_dict.items())
+                kwargs_str = ", ".join(f"{k}={v!r}" for k, v in args_dict.items())
                 lines.append(f"    agent.execute_action('{exp.tool_call}', {kwargs_str})")
         lines.append("    assert agent.state == AgentState.COMPLETED")
         test_functions.append("\n".join(lines))
