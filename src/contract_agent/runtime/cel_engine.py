@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 import celpy
 from celpy import celtypes
 
@@ -35,15 +35,24 @@ class CELEngine:
             try:
                 ast = self.env.compile(rule_str)
                 # We register the standard extension functions
+                def _trim_fn(s: Any) -> celtypes.StringType:
+                    return celtypes.StringType(str(s).strip())
+
+                def _lower_fn(s: Any) -> celtypes.StringType:
+                    return celtypes.StringType(str(s).lower())
+
+                def _upper_fn(s: Any) -> celtypes.StringType:
+                    return celtypes.StringType(str(s).upper())
+
                 functions: Dict[str, Callable[..., Any]] = {
                     # Custom workflow functions
                     "has_approval": self._make_has_approval_fn(),
                     "called_before": self._make_called_before_fn(),
                     "call_count": self._make_call_count_fn(),
                     # String extensions
-                    "trim": lambda s: celtypes.StringType(str(s).strip()),
-                    "lower": lambda s: celtypes.StringType(str(s).lower()),
-                    "upper": lambda s: celtypes.StringType(str(s).upper()),
+                    "trim": _trim_fn,
+                    "lower": _lower_fn,
+                    "upper": _upper_fn,
                 }
                 prgm = self.env.program(ast, functions=functions)
                 self._compiled_cache[rule_str] = prgm
@@ -64,7 +73,7 @@ class CELEngine:
         wf_ctx = context or WorkflowContext()
 
         # Build activation context
-        activation = {
+        activation: Dict[str, Any] = {
             "args": celpy.json_to_cel(args),
             "workflow": celpy.json_to_cel({"id": "current_workflow"}),
             "_wf_instance": wf_ctx,
@@ -73,7 +82,7 @@ class CELEngine:
         try:
             # Inject context into functions dynamically via thread/instance reference
             self._active_context = wf_ctx
-            result = prgm.evaluate(activation)
+            result = prgm.evaluate(cast(Any, activation))
             return bool(result)
         except Exception as exc:
             # CEL evaluation error fails closed

@@ -88,7 +88,8 @@ class ApprovalStore:
             """,
             (approval_type, resource_id),
         )
-        return cursor.fetchone() is not None
+        row = cursor.fetchone()
+        return bool(row is not None)
 
     def revoke_approval(self, approval_type: str, resource_id: str) -> None:
         """Revoke a previously granted approval."""

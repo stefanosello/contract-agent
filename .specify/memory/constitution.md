@@ -22,7 +22,7 @@ The Agent Synthesizer and Adversarial Test Generator operate under decoupled, ad
 
 ## Architectural Constraints
 
-- **Language & Runtime**: Python 3.11+ with strict type annotations (`mypy --strict`).
+- **Language & Runtime**: Python 3.11+ with strict type annotations enforced by Pyrefly (`pyrefly check`).
 - **Expression Engine**: Pure CEL (no Python `ast` or `eval` execution for rules).
 - **Asynchronous Human Escalation**: Approvals are first-class, out-of-band asynchronous state transitions stored in durable state (SQLite/Postgres) keyed by `(approval_type, resource_id)`.
 - **Cost Discipline**: Compilation is architected for budget efficiency (< $0.05 per verified compile using DeepSeek-V3 and Gemini Flash).

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 from contract_agent.core.exceptions import ContractAgentError
 from contract_agent.runtime.guards import GuardInterceptor
 
