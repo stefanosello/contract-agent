@@ -25,6 +25,7 @@ from contract_agent.compiler.personas import (
 )
 from contract_agent.compiler.providers import LLMProvider, get_provider
 from contract_agent.compiler.self_healing import SelfHealingEngine
+from contract_agent.compiler.telemetry import check_budget_ceiling
 from contract_agent.compiler.templates import (
     generate_default_fsm_agent,
     generate_default_test_suite,
@@ -90,6 +91,7 @@ class ContractCompiler:
             temperature=0.0,
         )
         telemetry.record_call(imp_resp, persona="AgentImplementer")
+        check_budget_ceiling(telemetry.total_cost_usd, self.budget_ceiling)
 
         if self.provider.name == "mock" and (
             imp_resp.content.startswith("# Mock") or not imp_resp.content.strip()
@@ -108,6 +110,7 @@ class ContractCompiler:
             temperature=0.0,
         )
         telemetry.record_call(test_resp, persona="AdversarialTester")
+        check_budget_ceiling(telemetry.total_cost_usd, self.budget_ceiling)
 
         if self.provider.name == "mock" and (
             test_resp.content.startswith("# Mock") or not test_resp.content.strip()

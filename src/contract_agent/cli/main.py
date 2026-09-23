@@ -70,11 +70,8 @@ def compile(
         sys.exit(2)
 
     console.print("[bold green]✔ Invariant verification passed 100%.[/bold green]")
-    console.print(
-        f"[dim]Telemetry: {result.telemetry.total_prompt_tokens} prompt tokens, "
-        f"{result.telemetry.total_completion_tokens} completion tokens, "
-        f"${result.telemetry.total_cost_usd:.4f}[/dim]"
-    )
+    from contract_agent.compiler.telemetry import format_telemetry_summary
+    console.print(f"[dim]{format_telemetry_summary(result.telemetry)}[/dim]")
 
     # Review Gate promotion
     gate = ReviewGate(output_dir=output_dir, staging_dir=staging_dir, console=console)
