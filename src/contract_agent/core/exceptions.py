@@ -96,3 +96,11 @@ class CELEvaluationError(ContractAgentError):
     def __init__(self, message: str, rule: str | None = None) -> None:
         super().__init__(message)
         self.rule = rule
+
+
+class IsolationSecurityError(ContractAgentError):
+    """Raised when an operation attempts to write outside the dist/ boundary or touches services/."""
+
+
+class BudgetExceededError(ContractAgentError):
+    """Raised when a compilation run exceeds the configured budget ceiling."""
