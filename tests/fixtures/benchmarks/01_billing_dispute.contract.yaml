@@ -1,0 +1,77 @@
+spec_version: "0.3"
+metadata:
+  name: "billing_dispute_agent"
+  version: "1.0.0"
+  description: "Handles customer billing dispute investigations and refunds"
+system:
+  role: "Billing Dispute Agent"
+  guidelines:
+    - "Always verify invoice details before taking financial action."
+    - "Refunds above $100 require manager approval."
+invariants:
+  - id: "INV-001"
+    target: "tool:execute_refund"
+    description: "Refund amount cannot exceed $100 without manager approval"
+    rule: "args.amount <= 100.0"
+    on_violation: "require_escalation"
+  - id: "INV-002"
+    target: "session:call_sequence"
+    description: "fetch_invoice must be called before execute_refund"
+    rule: "called_before('fetch_invoice', 'execute_refund')"
+    on_violation: "block_tool_call"
+tools:
+  - name: "fetch_invoice"
+    description: "Fetches invoice details by invoice ID"
+    parameters:
+      type: "object"
+      required: ["invoice_id"]
+      properties:
+        invoice_id:
+          type: "string"
+    returns:
+      type: "object"
+      properties:
+        invoice_id:
+          type: "string"
+        amount:
+          type: "number"
+        customer_id:
+          type: "string"
+        status:
+          type: "string"
+  - name: "execute_refund"
+    description: "Executes a customer refund against an invoice"
+    parameters:
+      type: "object"
+      required: ["invoice_id", "amount", "reason"]
+      properties:
+        invoice_id:
+          type: "string"
+        amount:
+          type: "number"
+        reason:
+          type: "string"
+    returns:
+      type: "object"
+      properties:
+        refund_id:
+          type: "string"
+        status:
+          type: "string"
+scenarios:
+  - id: "SCEN-001"
+    title: "Standard refund under limit"
+    context:
+      invoice_id: "INV-101"
+      invoice_amount: 50.0
+    user_input: "Customer disputes $50 charge on invoice INV-101, please refund it."
+    expected_flow:
+      - tool_call: "fetch_invoice"
+        with_args:
+          invoice_id: "INV-101"
+      - tool_call: "execute_refund"
+        with_args:
+          invoice_id: "INV-101"
+          amount: 50.0
+          reason: "Customer dispute"
+        response_contains: ["refunded", "INV-101"]

@@ -1,0 +1,49 @@
+spec_version: "0.3"
+metadata:
+  name: "sql_read_only_agent"
+  version: "1.0.0"
+  description: "Executes read-only SQL queries on analytics warehouse"
+system:
+  role: "Read-only SQL Query Agent"
+  guidelines:
+    - "Never execute data modification or schema altering statements."
+invariants:
+  - id: "INV-001"
+    target: "tool:execute_sql"
+    description: "Queries must be strictly read-only SELECT queries"
+    rule: "!args.query.matches('(?i)(DROP|DELETE|UPDATE|INSERT|ALTER|TRUNCATE)')"
+    on_violation: "raise_invariant_violation"
+  - id: "INV-002"
+    target: "tool:execute_sql"
+    description: "Row limit cannot exceed 1000"
+    rule: "args.limit <= 1000"
+    on_violation: "block_tool_call"
+tools:
+  - name: "execute_sql"
+    description: "Executes a SQL query against the database"
+    parameters:
+      type: "object"
+      required: ["query", "limit"]
+      properties:
+        query:
+          type: "string"
+        limit:
+          type: "integer"
+    returns:
+      type: "object"
+      properties:
+        rows:
+          type: "array"
+        count:
+          type: "integer"
+scenarios:
+  - id: "SCEN-001"
+    title: "Valid read-only query"
+    context: {}
+    user_input: "List the top 10 users"
+    expected_flow:
+      - tool_call: "execute_sql"
+        with_args:
+          query: "SELECT id, name FROM users"
+          limit: 10
+        response_contains: ["users"]
