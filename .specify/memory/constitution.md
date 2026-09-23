@@ -20,6 +20,13 @@ Before any LLM-synthesized code is tested, the compiler executes Zero-LLM verifi
 ### V. De-Correlated Synthesis & Human Review Gates
 The Agent Synthesizer and Adversarial Test Generator operate under decoupled, adversarial system personas (and distinct models where possible) to prevent correlated blindspots. Self-healing patches require an interactive unified Git diff review before being promoted to verified status; silent auto-promotion is prohibited except when explicitly flagged for headless CI.
 
+### VI. Atomic Commits & Small-Step Discipline
+All work must be committed in small, reviewable increments:
+- **Maximum 200 Lines of Code (LOC)** (additions + deletions) per commit.
+- **Maximum 10 files** changed per commit.
+- Tasks in `tasks.md` must be sized so that each task naturally maps to a single atomic commit satisfying these thresholds.
+- Enforced deterministically via repository Git pre-commit hooks (`.githooks/pre-commit`).
+
 ## Architectural Constraints
 
 - **Language & Runtime**: Python 3.11+ with strict type annotations enforced by Pyrefly (`pyrefly check`).

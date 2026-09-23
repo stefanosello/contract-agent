@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Git pre-commit hook enforcing Constitution Principle VI:
+# Max 200 LOC changed and Max 10 files per commit.
+set -e
+
+MAX_FILES=10
+MAX_LOC=200
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Check staged file count
+STAGED_FILES=$(git diff --cached --name-only)
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
+FILE_COUNT=$(echo "$STAGED_FILES" | wc -l | tr -d ' ')
+
+if [ "$FILE_COUNT" -gt "$MAX_FILES" ]; then
+    echo "❌ [Pre-Commit Error] Commit rejected: Too many files changed ($FILE_COUNT files > $MAX_FILES max limit)."
+    echo "   Principle VI mandates atomic commits. Please split your changes into smaller commits."
+    exit 1
+fi
+
+# 2. Check lines of code (LOC) additions + deletions (excluding lockfiles)
+LOC_CHANGES=$(git diff --cached --numstat | grep -v -E '(uv\.lock|package-lock\.json|poetry\.lock)' | awk '{add+=$1; del+=$2} END {print add+del}')
+LOC_CHANGES=${LOC_CHANGES:-0}
+
+if [ "$LOC_CHANGES" -gt "$MAX_LOC" ]; then
+    echo "❌ [Pre-Commit Error] Commit rejected: Commit size too large ($LOC_CHANGES LOC > $MAX_LOC max limit)."
+    echo "   Principle VI mandates atomic commits. Please decompose your changes into smaller commits (<= $MAX_LOC LOC)."
+    exit 1
+fi
+
+# 3. Fast Pyrefly type check if .venv exists
+if [ -f ".venv/bin/pyrefly" ]; then
+    echo "⚡ Running Pyrefly type check..."
+    .venv/bin/pyrefly check
+fi
+
+echo "✅ Pre-commit verification passed ($FILE_COUNT files, $LOC_CHANGES LOC)."
+exit 0
