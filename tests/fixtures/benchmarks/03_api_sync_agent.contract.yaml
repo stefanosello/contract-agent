@@ -1,0 +1,71 @@
+spec_version: "0.3"
+metadata:
+  name: "api_sync_agent"
+  version: "1.0.0"
+  description: "Synchronizes data between upstream CRM and downstream ERP"
+system:
+  role: "Third-party API Synchronization Agent"
+  guidelines:
+    - "Always pull records before pushing updates."
+    - "Batch size must not exceed API rate limit thresholds."
+invariants:
+  - id: "INV-001"
+    target: "tool:push_records"
+    description: "Sync batch size must not exceed 50"
+    rule: "args.batch_size <= 50"
+    on_violation: "block_tool_call"
+  - id: "INV-002"
+    target: "session:call_sequence"
+    description: "pull_records must be called before push_records"
+    rule: "called_before('pull_records', 'push_records')"
+    on_violation: "block_tool_call"
+tools:
+  - name: "pull_records"
+    description: "Pulls updated records from CRM"
+    parameters:
+      type: "object"
+      required: ["source"]
+      properties:
+        source:
+          type: "string"
+    returns:
+      type: "object"
+      properties:
+        records:
+          type: "array"
+        count:
+          type: "integer"
+  - name: "push_records"
+    description: "Pushes records to ERP"
+    parameters:
+      type: "object"
+      required: ["target", "batch_size", "records"]
+      properties:
+        target:
+          type: "string"
+        batch_size:
+          type: "integer"
+        records:
+          type: "array"
+    returns:
+      type: "object"
+      properties:
+        synced_count:
+          type: "integer"
+        status:
+          type: "string"
+scenarios:
+  - id: "SCEN-001"
+    title: "Standard synchronization run"
+    context: {}
+    user_input: "Sync latest contacts to ERP in batches of 25"
+    expected_flow:
+      - tool_call: "pull_records"
+        with_args:
+          source: "contacts"
+      - tool_call: "push_records"
+        with_args:
+          target: "erp"
+          batch_size: 25
+          records: []
+        response_contains: ["synced"]
