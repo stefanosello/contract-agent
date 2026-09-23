@@ -62,5 +62,5 @@ def test_dual_synthesis_artifact_contents(tmp_path: Path) -> None:
     assert "GuardInterceptor" in agent_content
 
     test_content = (staging_dir / "test_contract.py").read_text()
-    assert "test_scenario_scen-001" in test_content
+    assert "test_scenario_scen_001" in test_content
     assert "test_adversarial_probe_invariant_enforcement" in test_content
