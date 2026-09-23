@@ -91,6 +91,5 @@ jobs:
           files: dist/*
           generate_release_notes: true
 
-      # Publish to PyPI (optional: uncomment when PyPI trusted publishing is configured)
-      # - name: Publish distribution to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
