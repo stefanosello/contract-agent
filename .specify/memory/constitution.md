@@ -34,6 +34,14 @@ Direct commits to `main` are strictly prohibited for feature work:
 - Merges to `main` are permitted only after all feature tasks, Pyrefly type checks, and tests pass 100%.
 - Enforced deterministically via repository Git pre-commit hooks.
 
+### VIII. Protected Main Branch & Mandatory Pull Request Protocol
+- **No Direct Pushes to Main**: Direct pushes to `main` are strictly prohibited and deterministically blocked by Git pre-push hooks (`.githooks/pre-push`).
+- **PR-Only Integration**: All code must merge into `main` exclusively through GitHub Pull Requests after passing CI checks.
+- **Automated PR Generation**: At the conclusion of every feature development cycle (`/speckit-converge`), the harness must automatically push the feature branch to GitHub and open a Pull Request via `gh pr create` containing:
+  1. Summary of user stories and acceptance criteria fulfilled (from `specs/###-feature/spec.md`).
+  2. Verification report confirming Meta Pyrefly type checks (0 errors) and Pytest suite results.
+  3. Inventory of architectural decisions, new modules, and modified interfaces.
+
 ## Architectural Constraints
 
 - **Language & Runtime**: Python 3.11+ with strict type annotations enforced by Pyrefly (`pyrefly check`).
