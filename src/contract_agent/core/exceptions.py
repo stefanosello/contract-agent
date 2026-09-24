@@ -33,6 +33,7 @@ class InvariantViolationError(ContractAgentError):
         )
         super().__init__(formatted_message)
         self.invariant_id = invariant_id
+        self.message = message
         self.tool_name = tool_name
         self.tool_args = args
         self.on_violation = on_violation
