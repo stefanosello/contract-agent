@@ -8,6 +8,15 @@
 
 **Input**: User description: "improve agent template in order to allow interactive conversational agents creation"
 
+## Clarifications
+
+### Session 2026-09-23
+- Q: What API interface should the generated conversational agent expose for driving conversation turns and inspecting state? → A: Stream-first interface (`stream(message: str)` yielding token chunks and tool lifecycle events).
+- Q: How should the conversational agent handle and resume from invariant escalation events requiring human approval? → A: Hybrid approval model (transitions to `AWAITING_APPROVAL`, resolving either via programmatic `approve(token)` call or via an in-band supervisor confirmation message).
+- Q: How should the conversational agent manage dialogue history and context window retention across long-running sessions? → A: Unbounded in-memory history (retain all messages for the lifetime of the session without truncation).
+- Q: What reasoning architecture should the conversational agent template use to decide between replying vs invoking tools? → A: ReAct reasoning loop (the agent alternates between reasoning thoughts, guarded tool executions, and user responses within each turn).
+- Q: How should the conversational agent determine when a multi-turn workflow has reached completion? → A: Explicit completion signal (the agent emits a `complete_session` event or invokes a completion marker when workflow objectives are met or user confirms satisfaction).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Multi-Turn Conversational Interaction (Priority: P1) 🎯 MVP
@@ -50,8 +59,8 @@ As a workflow supervisor, I want the conversational agent to handle invariant es
 
 **Acceptance Scenarios**:
 
-1. **Given** a tool invocation that triggers an escalation invariant, **When** executed during a conversation turn, **Then** the agent pauses execution, transitions session state to awaiting approval, and provides an explanation to the user.
-2. **Given** an agent awaiting approval, **When** the user provides confirmed approval or the supervisor approves out-of-band, **Then** the agent resumes execution and completes the requested action.
+1. **Given** a tool invocation that triggers an escalation invariant, **When** executed during a conversation turn, **Then** the agent pauses execution, generates an approval token, transitions session state to `AWAITING_APPROVAL`, and emits an `escalation_required` event with a conversational explanation.
+2. **Given** an agent awaiting approval, **When** approved via programmatic `approve(token)` call or when an authorized in-band supervisor message is received, **Then** the agent resumes the paused tool execution, completes the requested action, and transitions state back to `PROCESSING` or `COMPLETED`.
 
 ---
 
@@ -84,19 +93,21 @@ As a QA engineer, I want the adversarial test generator to synthesize multi-turn
 
 ### Functional Requirements
 
-- **FR-001**: System MUST synthesize an agent template providing a high-level conversational interface (`chat` or `step`) accepting natural language user messages and returning conversational responses.
-- **FR-002**: The conversational agent MUST maintain an internal conversation history comprising sequential messages with author roles (user, assistant, tool, system) and timestamps.
+- **FR-001**: System MUST synthesize an agent template providing a stream-first conversational interface (`stream(message: str)`) yielding real-time token chunks and tool lifecycle events, along with an execution wrapper (`step` or `chat`) for non-streaming consumers.
+- **FR-002**: The conversational agent MUST maintain an unbounded, chronological in-memory history of all dialogue messages (user, assistant, tool, system) and tool events for the entire lifetime of the session without truncation.
 - **FR-003**: The conversational agent MUST support multi-turn dialogue where context from prior turns informs subsequent reasoning and action selection.
-- **FR-004**: During a conversation turn, the agent MUST be capable of dispatching zero, one, or multiple tool calls as needed to fulfill user intent.
+- **FR-004**: During a conversation turn, the agent MUST use a ReAct (Reasoning + Action) execution loop to alternate between reasoning thoughts, guarded tool invocations, and user-facing conversational replies.
 - **FR-005**: All tool executions initiated during conversational turns MUST be routed through the deterministic runtime guard interceptor (`GuardInterceptor`) before execution.
-- **FR-006**: The agent MUST track explicit conversational session states (`IDLE`, `PROCESSING`, `AWAITING_INPUT`, `AWAITING_APPROVAL`, `COMPLETED`, `FAILED`) that transition deterministically based on interaction outcomes.
+- **FR-006**: The agent MUST track explicit conversational session states (`IDLE`, `PROCESSING`, `AWAITING_INPUT`, `AWAITING_APPROVAL`, `COMPLETED`, `FAILED`), transitioning to `COMPLETED` when the agent emits an explicit `complete_session` event upon fulfilling workflow objectives or receiving user confirmation.
 - **FR-007**: When a tool execution is blocked or requires escalation by a CEL invariant rule, the agent MUST catch the guard outcome and explain the constraint conversationally in its response.
 - **FR-008**: The agent MUST support exporting and restoring the complete session state (messages, current state, metadata) to enable persistent multi-turn sessions across requests.
 - **FR-009**: The test generator MUST synthesize multi-turn dialogue test cases in `dist/test_contract.py` that validate conversational progression and invariant preservation across successive messages.
 - **FR-010**: The agent MUST provide a session reset mechanism that clears dialogue history and restores initial state for new interactions.
+- **FR-011**: The agent MUST support a hybrid approval mechanism for escalations, exposing an `approve(token: str, approver_id: str | None = None)` method for out-of-band resolution and recognizing authorized in-band confirmation messages to resume execution.
 
 ### Key Entities
 
+- **ConversationEvent**: A typed stream event emitted during interaction, such as `token` (partial text), `tool_call_start`, `tool_call_result`, `state_change`, or `escalation_required`.
 - **ConversationMessage**: An immutable record of a single communication turn, containing `role` (user, assistant, system, tool), `content` (text), and optional `tool_calls` / `tool_results`.
 - **ConversationSession**: The stateful container for an ongoing interaction, holding a unique session ID, ordered list of `ConversationMessage` records, current `AgentState`, and workflow context.
 - **ConversationTurnResult**: The structured result of a dialogue turn, containing the assistant's textual response, any tool calls executed during the turn, and the updated session status.
