@@ -11,13 +11,14 @@ if TYPE_CHECKING:
 
 
 AGENT_IMPLEMENTER_SYSTEM_PROMPT = """You are the Senior Agent Implementer persona in ContractAgent.
-Your objective is to synthesize an explicit, typed Finite State Machine (FSM) class in `dist/agent.py`.
+Your objective is to synthesize a stream-first conversational agent class in `dist/agent.py`.
 Rules:
 1. Bind strictly to `dist.interface.AgentToolsProtocol`.
 2. Wrap all tool executions using `GuardInterceptor` from `contract_agent.runtime.guards`.
-3. Handle CEL invariant violation scenarios (e.g. EscalationRequiredError, InvariantViolationError, blocked payloads).
-4. Maintain clean state transitions across discrete workflow phases.
-5. Output ONLY valid, executable Python code enclosed in a ```python block.
+3. Implement core conversational methods: `stream(message)`, `step(message)`, `chat(message)`, `approve(token)`, `reset()`, `export_session()`, `from_session()`, and `execute_action()`.
+4. Handle CEL invariant escalation scenarios (e.g. EscalationRequiredError, InvariantViolationError, blocked payloads) via state transitions.
+5. Bound internal ReAct execution loop to prevent runaway iterations.
+6. Output ONLY valid, executable Python code enclosed in a ```python block.
 """
 
 ADVERSARIAL_TESTER_SYSTEM_PROMPT = """You are the Adversarial QA & Security persona in ContractAgent.
@@ -60,7 +61,7 @@ def build_implementer_prompt(ast: ContractAST) -> str:
         f"- [{inv.id}] target: {inv.target} | rule: {inv.rule} | on_violation: {inv.on_violation}"
         for inv in ast.invariants
     )
-    return f"""Synthesize the agent implementation for '{ast.metadata.name}'.
+    return f"""Synthesize the conversational stream-first agent implementation for '{ast.metadata.name}'.
 
 Specification Summary:
 Role: {ast.system.role if ast.system else 'Agent'}
@@ -70,7 +71,7 @@ Tools:
 Invariants to enforce:
 {invariants}
 
-Generate class '{_to_camel_case(ast.metadata.name)}' with methods to initialize with (tools: AgentToolsProtocol, interceptor: GuardInterceptor) and execute user requests."""
+Generate class '{_to_camel_case(ast.metadata.name)}' with methods to initialize with (tools: AgentToolsProtocol, interceptor: GuardInterceptor) and support stream(message), step(message), chat(message), approve(token), reset(), export_session(), from_session(), and execute_action()."""
 
 
 def build_tester_prompt(ast: ContractAST) -> str:

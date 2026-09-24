@@ -27,6 +27,7 @@ from contract_agent.compiler.providers import LLMProvider, get_provider
 from contract_agent.compiler.self_healing import SelfHealingEngine
 from contract_agent.compiler.telemetry import check_budget_ceiling
 from contract_agent.compiler.templates import (
+    generate_default_conversational_agent,
     generate_default_fsm_agent,
     generate_default_test_suite,
 )
@@ -96,7 +97,7 @@ class ContractCompiler:
         if self.provider.name == "mock" and (
             imp_resp.content.startswith("# Mock") or not imp_resp.content.strip()
         ):
-            agent_code = generate_default_fsm_agent(ast)
+            agent_code = generate_default_conversational_agent(ast)
         else:
             agent_code = extract_code_block(imp_resp.content)
 
