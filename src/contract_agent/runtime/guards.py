@@ -63,8 +63,15 @@ class GuardInterceptor:
                     or "has_approval" in inv.rule
                 ):
                     resource_id = str(
-                        args.get("invoice_id") or args.get("resource_id") or "unknown"
+                        args.get("invoice_id")
+                        or args.get("account_id")
+                        or args.get("resource_id")
+                        or "unknown"
                     )
+                    if self.context.approval_store.has_approval(
+                        "manager_signoff", resource_id
+                    ):
+                        continue
                     raise EscalationRequiredError(
                         invariant_id=inv.id,
                         tool_name=tool_name,
