@@ -107,10 +107,17 @@ class ApprovalStore:
 class WorkflowContext:
     """Manages multi-turn execution state, tool call history, and approval verification."""
 
-    def __init__(self, approval_store: ApprovalStore | None = None) -> None:
+    def __init__(
+        self,
+        approval_store: ApprovalStore | None = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.call_history: list[ToolCallRecord] = []
         self.approval_store = approval_store or ApprovalStore(":memory:")
+        self.session_id = session_id
         self.session_data: dict[str, Any] = {}
+        self.metadata: dict[str, Any] = metadata or {}
 
     def record_call(
         self, tool_name: str, args: dict[str, Any], resource_id: str | None = None

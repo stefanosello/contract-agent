@@ -2,10 +2,112 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
+import time
 from typing import Any
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class AgentState(str, Enum):
+    """Lifecycle states of the conversational agent."""
+
+    IDLE = "IDLE"
+    PROCESSING = "PROCESSING"
+    AWAITING_INPUT = "AWAITING_INPUT"
+    AWAITING_APPROVAL = "AWAITING_APPROVAL"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ConversationEventType(str, Enum):
+    """Discriminator types for stream events."""
+
+    TOKEN = "token"
+    THOUGHT = "thought"
+    TOOL_CALL_START = "tool_call_start"
+    TOOL_CALL_RESULT = "tool_call_result"
+    STATE_CHANGE = "state_change"
+    ESCALATION_REQUIRED = "escalation_required"
+    TURN_COMPLETE = "turn_complete"
+    ERROR = "error"
+
+
+class ConversationEvent(BaseModel):
+    """Discrete event yielded across an asynchronous stream."""
+
+    type: ConversationEventType
+    content: str | None = None
+    tool_name: str | None = None
+    tool_args: dict[str, Any] | None = None
+    tool_result: Any | None = None
+    new_state: AgentState | None = None
+    approval_token: str | None = None
+    timestamp: float = Field(default_factory=time.time)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class MessageRole(str, Enum):
+    """Canonical message authorship roles."""
+
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
+    TOOL = "tool"
+
+
+class ConversationMessage(BaseModel):
+    """Individual dialogue turn stored in session history."""
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    role: MessageRole
+    content: str
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    tool_call_id: str | None = None
+    timestamp: float = Field(default_factory=time.time)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class PendingApproval(BaseModel):
+    """Suspended tool execution requiring human approval."""
+
+    token: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    invariant_id: str
+    tool_name: str
+    tool_args: dict[str, Any] = Field(default_factory=dict)
+    created_at: float = Field(default_factory=time.time)
+    status: str = "pending"
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ConversationSession(BaseModel):
+    """Container for stateful multi-turn interactions."""
+
+    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    state: AgentState = AgentState.IDLE
+    messages: list[ConversationMessage] = Field(default_factory=list)
+    pending_approvals: dict[str, PendingApproval] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ConversationTurnResult(BaseModel):
+    """Structured result returned from a synchronous turn execution."""
+
+    reply: str
+    state: AgentState
+    events: list[ConversationEvent] = Field(default_factory=list)
+    tools_executed: list[str] = Field(default_factory=list)
+    requires_approval: bool = False
+    approval_token: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class CompilationConfig(BaseModel):
