@@ -129,7 +129,7 @@ class WorkflowContext:
 
     def has_approval(self, approval_type: str, resource_id: str) -> bool:
         """Exposed to CEL: workflow.has_approval(type, resource_id)."""
-        return self.approval_store.has_approval(approval_type, str(resource_id))
+        return self.approval_store.has_approval(approval_type, resource_id)
 
     def called_before(
         self, prior_tool: str, target_tool: str, resource_id: str | None = None
@@ -148,7 +148,7 @@ class WorkflowContext:
                     or record.args.get("invoice_id")
                     or record.args.get("resource_id")
                 )
-                if str(matched_id) == str(resource_id):
+                if str(matched_id) == resource_id:
                     return True
         return False
 
@@ -163,5 +163,5 @@ class WorkflowContext:
             and str(
                 r.resource_id or r.args.get("invoice_id") or r.args.get("resource_id")
             )
-            == str(resource_id)
+            == resource_id
         )
