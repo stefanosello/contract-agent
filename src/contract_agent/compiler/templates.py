@@ -31,8 +31,10 @@ from __future__ import annotations
 
 import re
 from typing import Any
+import uuid
 
-from contract_agent.compiler.models import AgentState
+from contract_agent.compiler.models import AgentState, PendingApproval
+from contract_agent.core.exceptions import EscalationRequiredError
 from contract_agent.runtime.conversational import BaseConversationalAgent
 from contract_agent.runtime.guards import GuardInterceptor
 
@@ -75,12 +77,24 @@ class {agent_class}(BaseConversationalAgent):
         try:
 {tools_dispatch}
             raise ValueError(f"Unknown tool action: '{{action}}'")
+        except EscalationRequiredError as exc:
+            self.state = AgentState.AWAITING_APPROVAL
+            self.session.state = AgentState.AWAITING_APPROVAL
+            token = str(uuid.uuid4())
+            pending = PendingApproval(
+                token=token,
+                invariant_id=exc.invariant_id,
+                tool_name=action,
+                tool_args=kwargs,
+            )
+            self.session.pending_approvals[token] = pending
+            return {{"status": "escalation_required", "token": token, "invariant_id": exc.invariant_id}}
         except Exception:
             self.state = AgentState.FAILED
             self.session.state = AgentState.FAILED
             raise
         finally:
-            if self.state != AgentState.FAILED:
+            if self.state not in (AgentState.FAILED, AgentState.AWAITING_APPROVAL):
                 self.state = AgentState.COMPLETED
                 self.session.state = AgentState.COMPLETED
 
@@ -184,11 +198,14 @@ def generate_default_test_suite(ast: ContractAST) -> str:
             "    interceptor = GuardInterceptor(contract=contract, context=context)",
             f"    agent = {agent_class}(tools=tools, interceptor=interceptor)",
         ]
+        lines.append(f"    agent.step({sc.user_input!r})")
+        lines.append("    assert agent.state in (AgentState.AWAITING_INPUT, AgentState.AWAITING_APPROVAL, AgentState.COMPLETED)")
         for exp in sc.expected_flow:
             if exp.tool_call:
                 args_dict = exp.with_args or {}
                 kwargs_str = ", ".join(f"{k}={v!r}" for k, v in args_dict.items())
                 lines.append(f"    agent.execute_action('{exp.tool_call}', {kwargs_str})")
+        lines.append("    agent.complete_session()")
         lines.append("    assert agent.state == AgentState.COMPLETED")
         test_functions.append("\n".join(lines))
 
@@ -204,11 +221,9 @@ def generate_default_test_suite(ast: ContractAST) -> str:
     interceptor = GuardInterceptor(contract=contract, context=context)
     agent = {agent_class}(tools=tools, interceptor=interceptor)
 
-    # Trigger violation with out-of-boundary values
-    try:
-        agent.execute_action('{tool_name}', amount=99999.0, query='DROP TABLE users', batch_size=9999)
-    except Exception as exc:
-        assert "Invariant" in str(type(exc).__name__) or "Escalation" in str(type(exc).__name__) or agent.state == AgentState.FAILED
+    # Conversational adversarial probe
+    agent.step("Please execute {tool_name} with amount 99999.0 query 'DROP TABLE users' batch_size 9999")
+    assert agent.state in (AgentState.AWAITING_INPUT, AgentState.AWAITING_APPROVAL, AgentState.FAILED)
 '''
         test_functions.append(probe_test)
 

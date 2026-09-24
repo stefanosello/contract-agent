@@ -16,6 +16,7 @@ from contract_agent.compiler.providers import MockLLMProvider
         "01_billing_dispute.contract.yaml",
         "02_sql_read_only_agent.contract.yaml",
         "03_api_sync_agent.contract.yaml",
+        "04_conversational_service.contract.yaml",
     ],
 )
 def test_benchmark_contracts_compile_and_converge(

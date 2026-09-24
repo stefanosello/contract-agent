@@ -139,6 +139,30 @@ class BaseConversationalAgent:
             approval_token=None,
         )
 
+    def complete_session(self) -> ConversationTurnResult:
+        """Explicitly signals completion of the conversational session."""
+        self.state = AgentState.COMPLETED
+        self.session.state = AgentState.COMPLETED
+        reply = "Session completed successfully."
+        self.session.messages.append(
+            ConversationMessage(role=MessageRole.ASSISTANT, content=reply)
+        )
+        events = [
+            ConversationEvent(
+                type=ConversationEventType.STATE_CHANGE,
+                new_state=AgentState.COMPLETED,
+            ),
+            ConversationEvent(type=ConversationEventType.TOKEN, content=reply),
+            ConversationEvent(type=ConversationEventType.TURN_COMPLETE),
+        ]
+        return ConversationTurnResult(
+            reply=reply,
+            state=self.state,
+            events=events,
+            tools_executed=[],
+            requires_approval=False,
+        )
+
     def reset(self) -> None:
         """Clears conversation session history, pending approvals, and resets state."""
         self.session = ConversationSession()
