@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import types
+from pathlib import Path
 
 import pytest
 
@@ -110,3 +110,4 @@ def test_turn_iteration_ceiling_guard(conversational_tools_module) -> None:
     assert agent.max_turn_iterations == 2
     turn_result = agent.step("Please lookup account ACC-550")
     assert agent.state == AgentState.AWAITING_INPUT
+    assert len(turn_result.reply) > 0

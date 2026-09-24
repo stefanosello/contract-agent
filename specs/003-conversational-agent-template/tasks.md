@@ -10,8 +10,8 @@
 
 **Purpose**: Initialize conversational benchmark contracts and module exports.
 
-- [ ] T001 [P] Create multi-turn conversational customer service benchmark contract in `tests/fixtures/benchmarks/04_conversational_service.contract.yaml`
-- [ ] T002 [P] Export conversational data model schemas and event types in `src/contract_agent/compiler/__init__.py`
+- [X] T001 [P] Create multi-turn conversational customer service benchmark contract in `tests/fixtures/benchmarks/04_conversational_service.contract.yaml`
+- [X] T002 [P] Export conversational data model schemas and event types in `src/contract_agent/compiler/__init__.py`
 
 ---
 
@@ -21,10 +21,10 @@
 
 **⚠️ CRITICAL**: Must complete before user story implementation begins.
 
-- [ ] T003 [P] Implement `AgentState` enum (`IDLE`, `PROCESSING`, `AWAITING_INPUT`, `AWAITING_APPROVAL`, `COMPLETED`, `FAILED`) and `ConversationEventType` enum (`token`, `thought`, `tool_call_start`, `tool_call_result`, `state_change`, `escalation_required`, `turn_complete`, `error`) in `src/contract_agent/compiler/models.py`
-- [ ] T004 [P] Implement `ConversationEvent`, `MessageRole` (`system`, `user`, `assistant`, `tool`), `ConversationMessage`, `PendingApproval`, `ConversationSession`, and `ConversationTurnResult` Pydantic models in `src/contract_agent/compiler/models.py`
-- [ ] T005 [P] Unit tests for conversational data models, event schemas, and serialization roundtrips in `tests/unit/compiler/test_conversational_models.py`
-- [ ] T006 Extend `WorkflowContext` to track conversational session identifiers and metadata in `src/contract_agent/runtime/context.py`
+- [X] T003 [P] Implement `AgentState` enum (`IDLE`, `PROCESSING`, `AWAITING_INPUT`, `AWAITING_APPROVAL`, `COMPLETED`, `FAILED`) and `ConversationEventType` enum (`token`, `thought`, `tool_call_start`, `tool_call_result`, `state_change`, `escalation_required`, `turn_complete`, `error`) in `src/contract_agent/compiler/models.py`
+- [X] T004 [P] Implement `ConversationEvent`, `MessageRole` (`system`, `user`, `assistant`, `tool`), `ConversationMessage`, `PendingApproval`, `ConversationSession`, and `ConversationTurnResult` Pydantic models in `src/contract_agent/compiler/models.py`
+- [X] T005 [P] Unit tests for conversational data models, event schemas, and serialization roundtrips in `tests/unit/compiler/test_conversational_models.py`
+- [X] T006 Extend `WorkflowContext` to track conversational session identifiers and metadata in `src/contract_agent/runtime/context.py`
 
 **Checkpoint**: Foundational schemas and test suites verified — User Story 1 implementation can begin.
 
@@ -38,14 +38,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T007 [P] [US1] Unit tests for conversational agent template code generation in `tests/unit/compiler/test_conversational_templates.py`
-- [ ] T008 [P] [US1] Integration tests for multi-turn dialogue, message history, and session reset in `tests/integration/compiler/test_conversational_agent.py`
+- [X] T007 [P] [US1] Unit tests for conversational agent template code generation in `tests/unit/compiler/test_conversational_templates.py`
+- [X] T008 [P] [US1] Integration tests for multi-turn dialogue, message history, and session reset in `tests/integration/compiler/test_conversational_agent.py`
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement stream-first conversational agent class template with `stream()`, `step()`, `chat()`, `reset()`, `export_session()`, and `from_session()` in `src/contract_agent/compiler/templates.py`
-- [ ] T010 [US1] Update `AgentImplementer` system prompt and prompt builder in `src/contract_agent/compiler/personas.py` to synthesize conversational agent classes
-- [ ] T011 [US1] Wire conversational agent generation into `ContractCompiler.compile()` in `src/contract_agent/compiler/orchestrator.py`
+- [X] T009 [US1] Implement stream-first conversational agent class template with `stream()`, `step()`, `chat()`, `reset()`, `export_session()`, and `from_session()` in `src/contract_agent/compiler/templates.py`
+- [X] T010 [US1] Update `AgentImplementer` system prompt and prompt builder in `src/contract_agent/compiler/personas.py` to synthesize conversational agent classes
+- [X] T011 [US1] Wire conversational agent generation into `ContractCompiler.compile()` in `src/contract_agent/compiler/orchestrator.py`
 
 **Checkpoint**: User Story 1 complete — conversational agents can stream events, retain multi-turn context, and export/restore sessions.
 
@@ -59,13 +59,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] Integration test for conversational tool execution, ReAct loop iteration limits, and CEL violation blocking in `tests/integration/compiler/test_conversational_tools.py`
+- [X] T012 [P] [US2] Integration test for conversational tool execution, ReAct loop iteration limits, and CEL violation blocking in `tests/integration/compiler/test_conversational_tools.py`
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Implement ReAct execution loop in `ConversationalAgent.stream()` dispatching tools through `GuardInterceptor.wrap_tool()` and catching CEL guard outcomes in `src/contract_agent/compiler/templates.py`
-- [ ] T014 [US2] Add turn iteration limit guard (default 5 iterations) to prevent runaway conversational tool loops in `src/contract_agent/compiler/templates.py`
-- [ ] T015 [US2] Implement conversational formatting of CEL invariant violation and blocking diagnostics in `src/contract_agent/compiler/templates.py`
+- [X] T013 [US2] Implement ReAct execution loop in `ConversationalAgent.stream()` dispatching tools through `GuardInterceptor.wrap_tool()` and catching CEL guard outcomes in `src/contract_agent/compiler/templates.py`
+- [X] T014 [US2] Add turn iteration limit guard (default 5 iterations) to prevent runaway conversational tool loops in `src/contract_agent/compiler/templates.py`
+- [X] T015 [US2] Implement conversational formatting of CEL invariant violation and blocking diagnostics in `src/contract_agent/compiler/templates.py`
 
 **Checkpoint**: User Story 2 complete — agents execute tools conversationally with strict CEL invariant enforcement.
 
@@ -79,13 +79,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T016 [P] [US3] Unit tests for `approve()` validation, token generation, and approval state transitions in `tests/unit/compiler/test_conversational_escalation.py`
-- [ ] T017 [P] [US3] Integration test for conversational escalation pause and hybrid resumption in `tests/integration/compiler/test_conversational_escalation.py`
+- [X] T016 [P] [US3] Unit tests for `approve()` validation, token generation, and approval state transitions in `tests/unit/compiler/test_conversational_escalation.py`
+- [X] T017 [P] [US3] Integration test for conversational escalation pause and hybrid resumption in `tests/integration/compiler/test_conversational_escalation.py`
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Implement `PendingApproval` token management and state transition to `AWAITING_APPROVAL` in `src/contract_agent/compiler/templates.py`
-- [ ] T019 [US3] Implement `ConversationalAgent.approve(token, approver_id)` method and in-band supervisor message detection in `src/contract_agent/compiler/templates.py`
+- [X] T018 [US3] Implement `PendingApproval` token management and state transition to `AWAITING_APPROVAL` in `src/contract_agent/compiler/templates.py`
+- [X] T019 [US3] Implement `ConversationalAgent.approve(token, approver_id)` method and in-band supervisor message detection in `src/contract_agent/compiler/templates.py`
 
 **Checkpoint**: User Story 3 complete — sensitive actions pause for escalation and resume cleanly without session loss.
 
@@ -99,13 +99,13 @@
 
 ### Tests for User Story 4
 
-- [ ] T020 [P] [US4] Integration test verifying compiler synthesizes runnable conversational test suites in `tests/integration/compiler/test_conversational_test_gen.py`
+- [X] T020 [P] [US4] Integration test verifying compiler synthesizes runnable conversational test suites in `tests/integration/compiler/test_conversational_test_gen.py`
 
 ### Implementation for User Story 4
 
-- [ ] T021 [US4] Update `generate_default_test_suite()` in `src/contract_agent/compiler/templates.py` to generate multi-turn dialogue test functions simulating contract scenarios
-- [ ] T022 [US4] Update `AdversarialTester` persona prompt in `src/contract_agent/compiler/personas.py` to synthesize conversational boundary probe tests
-- [ ] T023 [US4] Implement explicit `complete_session` terminal event handling in test suites in `src/contract_agent/compiler/templates.py`
+- [X] T021 [US4] Update `generate_default_test_suite()` in `src/contract_agent/compiler/templates.py` to generate multi-turn dialogue test functions simulating contract scenarios
+- [X] T022 [US4] Update `AdversarialTester` persona prompt in `src/contract_agent/compiler/personas.py` to synthesize conversational boundary probe tests
+- [X] T023 [US4] Implement explicit `complete_session` terminal event handling in test suites in `src/contract_agent/compiler/templates.py`
 
 **Checkpoint**: User Story 4 complete — multi-turn dialogue verification suites evaluate in sandboxed test runs.
 
@@ -115,11 +115,11 @@
 
 **Purpose**: End-to-end quickstart validation, static type checks, linter verification, and test suite convergence.
 
-- [ ] T024 Validate all 4 quickstart scenarios in `specs/003-conversational-agent-template/quickstart.md`
-- [ ] T025 [P] Export `ConversationalAgent` and conversational models in root `src/contract_agent/__init__.py`
-- [ ] T026 Execute full static type analysis (`pyrefly check`) ensuring 0 errors
-- [ ] T027 Execute linter checks (`ruff check src tests`) ensuring clean status
-- [ ] T028 Run full test suite (`pytest tests`) verifying 100% pass rate across all unit and integration tests
+- [X] T024 Validate all 4 quickstart scenarios in `specs/003-conversational-agent-template/quickstart.md`
+- [X] T025 [P] Export `ConversationalAgent` and conversational models in root `src/contract_agent/__init__.py`
+- [X] T026 Execute full static type analysis (`pyrefly check`) ensuring 0 errors
+- [X] T027 Execute linter checks (`ruff check src tests`) ensuring clean status
+- [X] T028 Run full test suite (`pytest tests`) verifying 100% pass rate across all unit and integration tests
 
 ---
 

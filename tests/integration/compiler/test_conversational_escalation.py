@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import types
+from pathlib import Path
 
 import pytest
 
@@ -105,3 +105,4 @@ def test_in_band_conversational_supervisor_approval(escalation_system) -> None:
     assert supervisor_turn.requires_approval is False
     assert agent.state == AgentState.AWAITING_INPUT
     assert "grant_account_credit" in supervisor_turn.tools_executed
+    assert tools.call_counts.get("grant_account_credit", 0) == 1

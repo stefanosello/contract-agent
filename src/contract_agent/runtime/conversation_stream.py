@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 from typing import Any
-import uuid
 
 from contract_agent.compiler.models import (
     AgentState,

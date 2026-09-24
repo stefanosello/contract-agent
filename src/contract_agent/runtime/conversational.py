@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
 import concurrent.futures
-from typing import Any
 import uuid
+from collections.abc import AsyncIterator
+from typing import Any
 
 from contract_agent.compiler.models import (
     AgentState,

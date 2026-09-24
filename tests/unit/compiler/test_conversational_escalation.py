@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import types
 import uuid
+from pathlib import Path
 
 import pytest
 

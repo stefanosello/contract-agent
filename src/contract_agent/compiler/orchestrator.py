@@ -28,7 +28,6 @@ from contract_agent.compiler.self_healing import SelfHealingEngine
 from contract_agent.compiler.telemetry import check_budget_ceiling
 from contract_agent.compiler.templates import (
     generate_default_conversational_agent,
-    generate_default_fsm_agent,
     generate_default_test_suite,
 )
 from contract_agent.compiler.verification import SandboxedVerificationRunner
