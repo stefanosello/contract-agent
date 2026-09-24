@@ -101,7 +101,7 @@ class {agent_class}(BaseConversationalAgent):
         amount = float(amt_match.group(1) or amt_match.group(2)) if amt_match else 50.0
 
         if hasattr(self.tools, "lookup_account") and "lookup_account" not in executed_in_turn:
-            if "lookup_account" in msg_lower or (("lookup" in msg_lower or "account" in msg_lower) and acc_match):
+            if "lookup_account" in msg_lower or ("lookup" in msg_lower and acc_match):
                 return "lookup_account", {{"account_id": account_id}}
 
         if hasattr(self.tools, "grant_account_credit") and "grant_account_credit" not in executed_in_turn:
