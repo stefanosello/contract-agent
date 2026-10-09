@@ -48,7 +48,7 @@ class ZeroLLMVerificationRunner:
                     count, attacks = self._verify_invariant(contract, tool, invariant)
                     checks += count
                     mutations += attacks
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - Any verification error must fail closed before synthesis.
             message = f"Zero-LLM verification failed ({active_id}): {exc}"
             return VerificationReport(
                 passed=False, total_tests=checks + 1, passed_tests=checks, failed_tests=1,

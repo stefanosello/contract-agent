@@ -207,6 +207,16 @@ Task: "Update AgentImplementer persona in src/contract_agent/compiler/personas.p
 
 - [X] T039 [US3] Require implementer/repair personas to reuse durable runtime approval APIs and request tester coverage of restart/external approval/replay in `src/contract_agent/compiler/personas.py`; add prompt regressions in `tests/unit/compiler/test_durable_personas.py`.
 - [X] T040 Align C1/C2 requirements and architecture in `spec.md`, `plan.md`, `data-model.md`, `contracts/conversational-agent-api.md`, `research.md`, and `quickstart.md`; do not change the constitution or checklist markers.
-- [ ] T041 Run focused regressions, property/mutation suites, all four convergence benchmarks, full Pytest, Pyrefly, and Ruff; record results in this tasks file.
+- [X] T041 Run focused regressions, property/mutation suites, all four convergence benchmarks, full Pytest, Pyrefly, and Ruff; record results in this tasks file.
 
 **Dependencies**: T029 → T030 → T031 → T032 → T033; T034 → T035 → T036 → T037 → T038; both sequences → T039 → T040 → T041. Existing quality gates remain mandatory. Default production approvals are durable; explicit in-memory stores are test-only. The Zero-LLM gate cannot be bypassed by `skip_verification` or headless CI.
+
+### C1/C2 Validation Results (2026-10-09)
+
+- Feature isolation: `003-conversational-constitution-fixes`; pre-existing Spec Kit/OpenCode working-tree changes were preserved and excluded from remediation commits.
+- C1 focused conversational/recovery suite: 14 passed; C2 verifier/property/mutation suite: 19 passed; compiler ordering plus all four convergence benchmarks: 10 passed; prompt/synthesis regressions: 5 passed.
+- Full suite: `.venv/bin/pytest tests -q` → **122 passed** (11.08 seconds).
+- Type gate: `.venv/bin/pyrefly check` → **0 errors** (one pre-existing warning remains).
+- Lint gate: `.venv/bin/ruff check src tests` → **all checks passed**.
+- Repository whitespace validation: `git diff --check` clean. Python ignore patterns were already present; no unrelated ignore-file changes were needed.
+- Scope: C1/C2 remediated. Other analysis findings were not part of this implementation; supervisor authentication remains the host's responsibility.

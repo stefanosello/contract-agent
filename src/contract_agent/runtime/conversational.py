@@ -19,8 +19,8 @@ from contract_agent.compiler.models import (
     MessageRole,
     PendingApproval,
 )
-from contract_agent.runtime.conversation_stream import execute_turn_stream
 from contract_agent.runtime.context import ToolCallRecord
+from contract_agent.runtime.conversation_stream import execute_turn_stream
 from contract_agent.runtime.guards import GuardInterceptor
 
 
