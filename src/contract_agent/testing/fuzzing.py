@@ -80,14 +80,28 @@ class InvariantFuzzer:
                 )
             elif prop_type in ("number", "float"):
                 strategy_dict[prop_name] = st.floats(
-                    allow_nan=False, allow_infinity=False
+                    min_value=prop_spec.get("minimum"),
+                    max_value=prop_spec.get("maximum"),
+                    allow_nan=False, allow_infinity=False,
                 )
             elif prop_type == "string":
-                strategy_dict[prop_name] = st.text(max_size=200)
+                strategy_dict[prop_name] = st.text(
+                    min_size=prop_spec.get("minLength", 0),
+                    max_size=prop_spec.get("maxLength", max(200, prop_spec.get("minLength", 0))),
+                )
             elif prop_type in ("boolean", "bool"):
                 strategy_dict[prop_name] = st.booleans()
+            elif prop_type == "array":
+                item_schema = {"type": "object", "properties": {"item": prop_spec.get("items", {})}}
+                items = self.strategy_for_json_schema(item_schema).map(lambda sample: sample["item"])
+                strategy_dict[prop_name] = st.lists(
+                    items, min_size=prop_spec.get("minItems", 0),
+                    max_size=prop_spec.get("maxItems", max(5, prop_spec.get("minItems", 0))),
+                )
+            elif prop_type == "object":
+                strategy_dict[prop_name] = self.strategy_for_json_schema(prop_spec)
             else:
-                strategy_dict[prop_name] = st.text()
+                raise ValueError(f"Unsupported schema type for {prop_name}: {prop_type}")
 
         return st.fixed_dictionaries(strategy_dict)
 

@@ -198,7 +198,7 @@ Task: "Update AgentImplementer persona in src/contract_agent/compiler/personas.p
 ### C2 — Mandatory Zero-LLM Verification
 
 - [X] T034 [US2] Add property and mutation gate regression tests in `tests/unit/compiler/test_zero_llm_verification.py`.
-- [ ] T035 [US2] Build schema-derived and deterministic CEL-boundary probes in `src/contract_agent/testing/verification_probes.py`, reusing `InvariantFuzzer`.
+- [X] T035 [US2] Build schema-derived and deterministic CEL-boundary probes in `src/contract_agent/testing/verification_probes.py`, reusing `InvariantFuzzer`.
 - [ ] T036 [US2] Implement bounded Hypothesis verification and contract-specific rogue mutation checks in `src/contract_agent/compiler/zero_llm_verification.py`, reusing `run_mutation_safety_suite`.
 - [ ] T037 [US4] Add compiler gate ordering, failure, and skip-verification regression tests in `tests/integration/compiler/test_zero_llm_gate.py`.
 - [ ] T038 [US4] Integrate the fail-closed gate before synthesis/testing, expose its report, and make Hypothesis a runtime compiler dependency in `orchestrator.py`, `models.py`, and `pyproject.toml`.
