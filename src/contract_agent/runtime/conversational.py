@@ -6,6 +6,7 @@ import asyncio
 import concurrent.futures
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import asdict
 from typing import Any
 
 from contract_agent.compiler.models import (
@@ -19,6 +20,7 @@ from contract_agent.compiler.models import (
     PendingApproval,
 )
 from contract_agent.runtime.conversation_stream import execute_turn_stream
+from contract_agent.runtime.context import ToolCallRecord
 from contract_agent.runtime.guards import GuardInterceptor
 
 
@@ -43,6 +45,7 @@ class BaseConversationalAgent:
         )
         self.state: AgentState = AgentState.IDLE
         self.history: list[dict[str, Any]] = []
+        self.interceptor.context.session_id = self.session.session_id
 
     def execute_action(self, action: str, **kwargs: Any) -> Any:
         """Executes a tool action with state transition and guard interception."""
@@ -187,14 +190,18 @@ class BaseConversationalAgent:
 
     def reset(self) -> None:
         """Clears conversation session history, pending approvals, and resets state."""
+        self.interceptor.context.approval_store.requests.cancel(self.session.session_id)
         self.session = ConversationSession()
         self.state = AgentState.IDLE
         self.history.clear()
+        self.interceptor.context.call_history.clear()
+        self.interceptor.context.session_id = self.session.session_id
 
     def export_session(self) -> dict[str, Any]:
         """Exports session history and state to a JSON-compatible dictionary."""
         self.session.state = self.state
-        return self.session.model_dump()
+        self.session.workflow_calls = [asdict(call) for call in self.interceptor.context.call_history]
+        return self.session.model_dump(mode="json")
 
     @classmethod
     def from_session(
@@ -209,6 +216,12 @@ class BaseConversationalAgent:
         agent = cls(tools=tools, interceptor=interceptor, provider=provider, session_id=session.session_id)
         agent.session = session
         agent.state = session.state
+        for token, pending in session.pending_approvals.items():
+            if pending.status == "pending":
+                agent._pending_approval(token)
+        if session.state == AgentState.AWAITING_APPROVAL and not session.pending_approvals:
+            raise ValueError("Awaiting-approval session has no pending request")
+        interceptor.context.call_history = [ToolCallRecord(**call) for call in session.workflow_calls]
         return agent
 
     def _resolve_tool_call(
