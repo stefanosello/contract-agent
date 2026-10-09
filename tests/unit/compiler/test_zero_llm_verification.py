@@ -48,7 +48,9 @@ def test_bypassed_guard_is_detected() -> None:
 
 
 def test_malformed_cel_fails_closed() -> None:
-    report = ZeroLLMVerificationRunner().run_verification(guarded_contract("args.amount <= ("))
+    ast = guarded_contract()
+    ast.invariants[0].rule = "args.amount <= ("
+    report = ZeroLLMVerificationRunner().run_verification(ast)
     assert not report.passed
     assert report.failures
 
@@ -62,9 +64,9 @@ def test_unbound_invariant_is_not_silently_skipped() -> None:
 
 
 def test_erroring_rule_is_fail_closed_without_backend_execution() -> None:
-    report = ZeroLLMVerificationRunner(max_examples=5).run_verification(
-        guarded_contract("args.missing_field > 0")
-    )
+    ast = guarded_contract()
+    ast.invariants[0].rule = "args.missing_field > 0"
+    report = ZeroLLMVerificationRunner(max_examples=5).run_verification(ast)
     assert not report.passed
 
 
