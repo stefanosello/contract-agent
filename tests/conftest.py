@@ -1,0 +1,10 @@
+"""Keep production-default SQLite approval stores isolated during tests."""
+
+from pathlib import Path
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def isolated_approval_database(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("CONTRACT_AGENT_APPROVAL_DB", str(tmp_path / "approvals.sqlite3"))

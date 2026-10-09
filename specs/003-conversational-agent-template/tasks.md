@@ -182,3 +182,30 @@ Task: "Update AgentImplementer persona in src/contract_agent/compiler/personas.p
 3. Add US3 $\to$ Hybrid Escalation Pause & Resumption Workflows
 4. Add US4 $\to$ Multi-Turn Dialogue Test Generation in `dist/test_contract.py`
 5. Polish $\to$ Quickstart verification, Pyrefly 0 errors, Ruff clean, 100% test pass rate.
+
+## Phase 8: Constitution Remediation (C1 / C2)
+
+**Scope**: Resolve analysis findings C1 and C2 only. Preserve T001–T028 completion history. Each task is a sequential, single-commit increment of at most 200 changed lines and 10 files.
+
+### C1 — Durable Asynchronous Approvals
+
+- [X] T029 [US3] Add durable approval restart, external resolution, and fail-closed replay tests in `tests/integration/compiler/test_durable_approvals.py`; isolate default approval databases in `tests/conftest.py`.
+- [ ] T030 [US3] Default `ApprovalStore` to configurable file-backed SQLite and persist session-bound approval requests in `src/contract_agent/runtime/approval_requests.py` and `src/contract_agent/runtime/context.py`.
+- [ ] T031 [US3] Bind pending approvals to `(approval_type, resource_id)` and persist escalation payloads before publishing tokens in `src/contract_agent/compiler/models.py` and `src/contract_agent/runtime/conversation_stream.py`.
+- [ ] T032 [US3] Route programmatic/in-band approvals through durable transitions and add externally approved request resumption in `src/contract_agent/runtime/conversational.py`.
+- [ ] T033 [US3] Restore guard-relevant workflow history and validate durable request identity on session restoration; cancel pending requests on reset in `src/contract_agent/runtime/conversational.py`.
+
+### C2 — Mandatory Zero-LLM Verification
+
+- [ ] T034 [US2] Add property and mutation gate regression tests in `tests/unit/compiler/test_zero_llm_verification.py`.
+- [ ] T035 [US2] Build schema-derived and deterministic CEL-boundary probes in `src/contract_agent/testing/verification_probes.py`, reusing `InvariantFuzzer`.
+- [ ] T036 [US2] Implement bounded Hypothesis verification and contract-specific rogue mutation checks in `src/contract_agent/compiler/zero_llm_verification.py`, reusing `run_mutation_safety_suite`.
+- [ ] T037 [US4] Add compiler gate ordering, failure, and skip-verification regression tests in `tests/integration/compiler/test_zero_llm_gate.py`.
+- [ ] T038 [US4] Integrate the fail-closed gate before synthesis/testing, expose its report, and make Hypothesis a runtime compiler dependency in `orchestrator.py`, `models.py`, and `pyproject.toml`.
+
+### Alignment & Validation
+
+- [ ] T039 Align C1/C2 requirements and architecture in `spec.md`, `plan.md`, `data-model.md`, `contracts/conversational-agent-api.md`, `research.md`, and `quickstart.md`; do not change the constitution or checklist markers.
+- [ ] T040 Run focused regressions, property/mutation suites, all four convergence benchmarks, full Pytest, Pyrefly, and Ruff; record results in this tasks file.
+
+**Dependencies**: T029 → T030 → T031 → T032 → T033; T034 → T035 → T036 → T037 → T038; both sequences → T039 → T040. Existing quality gates remain mandatory. Default production approvals are durable; explicit in-memory stores are test-only. The Zero-LLM gate cannot be bypassed by `skip_verification` or headless CI.
