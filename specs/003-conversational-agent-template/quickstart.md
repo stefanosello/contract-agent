@@ -11,6 +11,7 @@
 - Python 3.11+
 - Virtual environment active with dependencies installed (`uv sync`)
 - Benchmark contracts available in `tests/fixtures/benchmarks/`
+- Configure `CONTRACT_AGENT_APPROVAL_DB` to a writable SQLite file for durable approvals; use the same file when restoring sessions or resolving approvals externally. Dialogue snapshots must be stored by the trusted host.
 
 ---
 
@@ -110,3 +111,19 @@ uv run pytest dist/test_contract.py -v
 - `dist/agent.py` contains conversational ReAct FSM agent with `stream`, `step`, `chat`, and `approve`.
 - `dist/test_contract.py` executes multi-turn conversational tests verifying invariant enforcement and state transitions.
 - Pytest exits code 0 with 100% passed tests.
+
+## 6. C1/C2 Remediation Validation
+
+```bash
+uv run pytest tests/integration/compiler/test_durable_approvals.py \
+  tests/unit/compiler/test_durable_personas.py \
+  tests/unit/compiler/test_zero_llm_verification.py \
+  tests/integration/compiler/test_zero_llm_gate.py \
+  tests/integration/compiler/test_benchmark_convergence.py tests/property tests/mutation -q
+```
+
+- Durable approval tests close/reopen SQLite, restore the suspended session and prerequisite history, resolve approvals externally, and reject altered/consumed/reset-session tokens.
+- Gate tests assert property/mutation verification precedes synthesis and generated tests, and failure results in zero LLM calls even with `skip_verification=True` or headless CI.
+- `CompilationResult.zero_llm_report` records mandatory gate results independently of the generated-suite report. All four benchmark contracts must converge.
+- External approval flow: save `agent.export_session()`; a trusted supervisor grants the persisted approval key via `ApprovalStore.grant_approval`; restore with the same database and call `agent.resume_approval(token)`. Do not recreate approval authority from the snapshot.
+- Claims are consumed before dispatch. Reconcile interrupted consumed requests with the backend manually; do not retry stale snapshots automatically.

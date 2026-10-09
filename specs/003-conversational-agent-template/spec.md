@@ -104,6 +104,8 @@ As a QA engineer, I want the adversarial test generator to synthesize multi-turn
 - **FR-009**: The test generator MUST synthesize multi-turn dialogue test cases in `dist/test_contract.py` that validate conversational progression and invariant preservation across successive messages.
 - **FR-010**: The agent MUST provide a session reset mechanism that clears dialogue history and restores initial state for new interactions.
 - **FR-011**: The agent MUST support a hybrid approval mechanism for escalations, exposing an `approve(token: str, approver_id: str | None = None)` method for out-of-band resolution and recognizing authorized in-band confirmation messages to resume execution.
+- **FR-012**: Approval state MUST be authoritative in durable SQLite storage keyed by `(approval_type, resource_id)`. The agent MUST persist the session-bound token and exact suspended action before emitting escalation, support asynchronous external approval followed by `resume_approval(token)`, and re-enter `GuardInterceptor` on resumption. Session snapshots MUST NOT grant authority, alter the persisted action, or replay consumed/cancelled tokens. Explicit in-memory stores are test-only.
+- **FR-013**: Every compilation MUST run a fail-closed Zero-LLM verification gate before synthesis or synthesized-code testing. The gate MUST use bounded Hypothesis schema/boundary probes and contract-specific rogue mutations, report results separately, and stop on failure with zero LLM calls. Headless CI and `skip_verification` MUST NOT bypass this gate.
 
 ### Key Entities
 
@@ -124,6 +126,7 @@ As a QA engineer, I want the adversarial test generator to synthesize multi-turn
 - **SC-003**: Conversational agents preserve context and execute multi-step contract workflows across at least 10 consecutive turns without state corruption or session loss.
 - **SC-004**: Developers can initialize and converse with a compiled agent in 3 or fewer lines of code.
 - **SC-005**: Generated conversational test suites execute and pass 100% of defined scenarios in under 15 seconds per contract.
+- **SC-006**: Durable approval tests MUST demonstrate successful external resolution and restart resumption, with zero executions from altered, consumed, or reset-session requests. Compiler-ordering tests MUST prove gate failure prevents both synthesis personas and generated test execution for every headless/skip-verification combination.
 
 ---
 
@@ -133,4 +136,5 @@ As a QA engineer, I want the adversarial test generator to synthesize multi-turn
 - The underlying LLM provider provides text completion and supports tool selection / function calling or prompt-guided JSON dispatching.
 - Runtime invariant evaluation remains strictly deterministic via Google CEL, independent of language model output.
 - Transport mechanisms (CLI loop, WebSocket, REST API, UI widget) are host application responsibilities; the compiled agent exposes a clean, embeddable Python interface.
-- Default conversation session state is stored in memory, with JSON-serializable export/import for optional durable persistence.
+- Dialogue history remains in memory, with JSON-serializable export/import for optional host-managed session persistence. Approval persistence is mandatory and independent of session snapshots. The default SQLite path is `~/.local/share/contract-agent/approvals.sqlite3`, configurable via `CONTRACT_AGENT_APPROVAL_DB` or an explicit `ApprovalStore` path.
+- Authentication and supervisor authorization are host responsibilities; `approver_id` is an audit label, not proof of identity. Only trusted host approval adapters may invoke approval-granting APIs or route in-band supervisor confirmations.

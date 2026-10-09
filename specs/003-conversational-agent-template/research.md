@@ -53,11 +53,12 @@
 - **Context**: Contract invariants with `on_violation: require_escalation` (e.g. refunds > $100) pause the workflow until approved.
 - **Decision**: Implement a hybrid escalation model:
   1. When an invariant raises an escalation requirement, intercept it in the execution loop.
-  2. Generate a secure, unique `approval_token` and store the pending tool execution payload in `ConversationSession.pending_approvals`.
+   2. Generate a secure, unique `approval_token`, durably persist the session-bound exact action payload and `(approval_type, resource_id)` decision in SQLite, and cache the request in `ConversationSession.pending_approvals`.
   3. Transition `AgentState` to `AWAITING_APPROVAL`.
   4. Yield an `escalation_required` event containing the invariant description, token, and conversational explanation.
   5. Resolution path A (Programmatic): Caller invokes `agent.approve(approval_token, approver_id)`.
-  6. Resolution path B (In-band conversational): In a multi-user or supervisor session, an authorized message (e.g. "Approved") matching the approval schema resumes the action.
+   6. Resolution path B (In-band conversational): In a multi-user or supervisor session, an authorized message (e.g. "Approved") matching the approval schema resumes the action.
+   7. Resolution path C (External asynchronous): A trusted supervisor updates `ApprovalStore`; `resume_approval(token)` consumes the durable request and re-enters the guard without granting approval itself.
 - **Rationale**: Supports both automated supervisor dashboards/APIs and conversational chatroom approvals without modifying application logic.
 - **Alternatives Considered**:
   - *Hard exception crash*: Terminating the process destroys conversational state and requires full restart.
@@ -73,4 +74,10 @@
   - Injects adversarial conversational boundary probes (e.g. attempting to coax the agent into refunding $99,999 in chat) and asserts the guard blocks or escalates the action.
 - **Rationale**: Verifies conversational integrity and ensures invariant enforcement is resilient to natural language prompt variations.
 - **Alternatives Considered**:
-  - *Retaining action-only tests*: Leaves conversational routing and streaming untested.
+- *Retaining action-only tests*: Leaves conversational routing and streaming untested.
+
+### C1/C2 Remediation Decisions
+
+- Approval persistence is mandatory, unlike optional dialogue snapshot persistence. Session-only tokens cannot authorize execution. Reset cancels pending tokens; consumed tokens cannot be replayed after restart. Workflow call history is restored for prerequisite checks.
+- The compiler's mandatory Zero-LLM gate runs before synthesis. It reuses `InvariantFuzzer` and `run_mutation_safety_suite`, isolates invariants to avoid masking, and uses fake handlers only. Numeric boundary seeds supplement bounded Hypothesis sampling; this verifies enforcement behavior, not arbitrary policy intent.
+- Failed gates return a separate verification report and stop before LLM calls. Neither headless CI nor generated-test skipping bypasses the gate. Hypothesis is therefore a runtime dependency, not only a development dependency.

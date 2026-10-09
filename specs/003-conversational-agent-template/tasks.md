@@ -206,7 +206,7 @@ Task: "Update AgentImplementer persona in src/contract_agent/compiler/personas.p
 ### Alignment & Validation
 
 - [X] T039 [US3] Require implementer/repair personas to reuse durable runtime approval APIs and request tester coverage of restart/external approval/replay in `src/contract_agent/compiler/personas.py`; add prompt regressions in `tests/unit/compiler/test_durable_personas.py`.
-- [ ] T040 Align C1/C2 requirements and architecture in `spec.md`, `plan.md`, `data-model.md`, `contracts/conversational-agent-api.md`, `research.md`, and `quickstart.md`; do not change the constitution or checklist markers.
+- [X] T040 Align C1/C2 requirements and architecture in `spec.md`, `plan.md`, `data-model.md`, `contracts/conversational-agent-api.md`, `research.md`, and `quickstart.md`; do not change the constitution or checklist markers.
 - [ ] T041 Run focused regressions, property/mutation suites, all four convergence benchmarks, full Pytest, Pyrefly, and Ruff; record results in this tasks file.
 
 **Dependencies**: T029 → T030 → T031 → T032 → T033; T034 → T035 → T036 → T037 → T038; both sequences → T039 → T040 → T041. Existing quality gates remain mandatory. Default production approvals are durable; explicit in-memory stores are test-only. The Zero-LLM gate cannot be bypassed by `skip_verification` or headless CI.

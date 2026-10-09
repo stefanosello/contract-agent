@@ -101,8 +101,12 @@ Represents a tool execution suspended pending human escalation.
 | `invariant_id` | `str` | Triggered contract invariant ID (e.g. `INV-001`). |
 | `tool_name` | `str` | Tool whose execution was intercepted. |
 | `tool_args` | `dict[str, Any]` | Bound tool arguments. |
+| `approval_type` | `str` | Exact approval type supplied by the deterministic escalation outcome. |
+| `resource_id` | `str \| None` | Exact resource identity; populated on every emitted escalation. |
 | `created_at` | `float` | Timestamp of escalation. |
-| `status` | `str` | Status: `pending`, `approved`, `rejected`. |
+| `status` | `str` | Local request status; newly issued requests are `pending`, resumed requests become `consumed`. |
+
+Authoritative approval decisions are SQLite rows keyed by `(approval_type, resource_id)` with `pending`/`approved`/`rejected` status. Companion `approval_requests` rows bind token, session ID, approval key, immutable JSON payload, and `pending`/`consumed`/`cancelled` status. Snapshot data is validated against these rows, never used to recreate authorization. Consumption is atomic and precedes guarded dispatch.
 
 ---
 
@@ -114,7 +118,8 @@ Stateful container for an entire multi-turn interaction.
 | `session_id` | `str` | Unique session identifier. |
 | `state` | `AgentState` | Current agent state (default `IDLE`). |
 | `messages` | `list[ConversationMessage]` | Chronological unbounded message history. |
-| `pending_approvals` | `dict[str, PendingApproval]` | Active approvals keyed by token. |
+| `pending_approvals` | `dict[str, PendingApproval]` | Session cache of durable requests keyed by token; not an authority source. |
+| `workflow_calls` | `list[dict[str, Any]]` | Serialized successful tool-call history restored into `WorkflowContext` for prerequisite guards. |
 | `metadata` | `dict[str, Any]` | Extensible metadata (user IDs, contract version). |
 
 ---

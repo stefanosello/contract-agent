@@ -10,8 +10,9 @@ Enhance the agent compilation template to synthesize interactive, multi-turn con
 1. **Stream-First Execution & Synchronous Facades**: Generate `stream(message: str) -> AsyncIterator[ConversationEvent]` for real-time token/tool event streaming, alongside `step()` and `chat()` synchronous facades.
 2. **ReAct Reasoning Loop**: Implement bounded ReAct dialogue execution alternating between thoughts, guarded tool invocations, and conversational responses.
 3. **Unbounded In-Memory Dialogue Session**: Track full conversation timeline in `ConversationSession` with JSON export/restore capabilities.
-4. **Hybrid Invariant Escalation**: Transition to `AWAITING_APPROVAL` with cryptographically unique tokens, resumable via `approve(token)` or conversational approval.
+4. **Durable Hybrid Invariant Escalation**: Persist keyed SQLite approval transitions and session-bound suspended actions before emitting tokens. Reuse `BaseConversationalAgent` for programmatic/in-band grants and externally approved `resume_approval(token)` recovery.
 5. **Conversational Test Generation**: Upgrade `dist/test_contract.py` templates to synthesize multi-turn dialogue verification suites and conversational adversarial probes.
+6. **Mandatory Zero-LLM Gate**: Before either synthesis persona, run bounded schema/boundary Hypothesis checks and per-invariant rogue mutations using fake handlers. Reject malformed/unbound rules, inconsistent dispatch, and escaping mutants without LLM calls. Generated-test skipping never skips this gate.
 
 ## Technical Context
 
@@ -23,8 +24,9 @@ Enhance the agent compilation template to synthesize interactive, multi-turn con
 - `pyyaml>=6.0.0`: Behavioral contract schema parsing.
 - `typer>=0.12.0`, `rich>=13.7.0`: CLI compiler command and terminal rendering.
 - `pytest>=8.0.0`, `pytest-asyncio>=0.23.0`: Testing harness for async streaming and sync execution.
+- `hypothesis>=6.100.0`: Runtime compiler dependency for mandatory Zero-LLM property verification.
 
-**Storage**: In-memory `ConversationSession` with JSON dictionary serialization (`export_session` / `from_session`).
+**Storage**: In-memory `ConversationSession` with JSON dictionary serialization (`export_session` / `from_session`), including guard-relevant workflow call history. Authoritative approvals live in file-backed SQLite keyed by `(approval_type, resource_id)`; a companion request table binds token, session, payload, and consumption status. Default path: `~/.local/share/contract-agent/approvals.sqlite3`; override via `CONTRACT_AGENT_APPROVAL_DB` or `ApprovalStore(path)`. Explicit `:memory:` stores are test-only.
 
 **Testing**: Pytest unit tests for conversational models and templates, compiler integration tests with offline mock provider, 3-contract convergence benchmark validation.
 
@@ -47,11 +49,12 @@ Enhance the agent compilation template to synthesize interactive, multi-turn con
 | **I. Spec-as-Source** | `agent.contract.yaml` remains the immutable source of truth. All conversational templates and test suites are reproducible build artifacts in `dist/`. | PASS |
 | **II. Deterministic CEL** | All tool calls triggered during conversational turns are routed through `GuardInterceptor`. Zero LLM involvement in invariant evaluation. | PASS |
 | **III. Strict Protocol Binding** | Conversational agents bind strictly to typed `AgentToolsProtocol` in `dist/interface.py`. Human services in `services/` are never modified. | PASS |
-| **IV. Layered Verification** | Invariant rules mathematically verified via property fuzzing; conversational tests verify turn-by-turn state transitions in sandboxed runners. | PASS |
+| **IV. Layered Verification** | T034–T038 enforce Zero-LLM schema/boundary property checks and contract-specific mutations before synthesis/testing; all four benchmarks remain in CI. Bounded sampling is not a proof of arbitrary policy intent. | PASS |
 | **V. De-Correlated Synthesis & Review Gates** | Implementer and tester personas operate independently. Interactive unified Git diff review gate intercepts all promotions. | PASS |
 | **VI. Atomic Commits & Small-Step Discipline** | Tasks sized for atomic commits $\le$ 200 LOC and $\le$ 10 files per commit. | PASS |
 | **VII. Feature Branch Isolation** | Developed on branch `003-conversational-agent-template`. | PASS |
 | **VIII. Protected Main & PR Protocol** | Direct pushes to `main` blocked; automated PR created via `gh pr create` upon convergence. | PASS |
+| **Durable Asynchronous Escalation** | T029–T033 persist authoritative keyed approval transitions and immutable session-bound requests; external grants, restart recovery, reset cancellation, and replay rejection are tested. | PASS |
 
 ## Design Artifacts
 
@@ -106,6 +109,16 @@ tests/
 ```
 
 **Structure Decision**: Fully integrated within the existing `src/contract_agent/compiler` subsystem without introducing unnecessary packages or breaking existing APIs.
+
+### Constitution Remediation Modules & Order
+
+- `runtime/approval_requests.py`: durable suspended-action registration, lookup, atomic consumption, and cancellation; shares the `ApprovalStore` SQLite connection.
+- `runtime/conversation_stream.py` / `runtime/conversational.py`: persist escalation before publication, reuse approval transitions, restore workflow prerequisites, and validate snapshots against durable requests.
+- `testing/verification_probes.py`: deterministic scenario/numeric/string boundary seeds; `InvariantFuzzer` supplies schema-derived Hypothesis inputs.
+- `compiler/zero_llm_verification.py`: isolate each invariant, compare dispatch with deterministic CEL decisions, and reuse `run_mutation_safety_suite` for violating inputs. No host handlers or LLM provider are used.
+- Compiler order: parse/isolate → Zero-LLM gate → protocol/mock generation → dual synthesis → generated tests/self-healing → existing human-review promotion gate. `CompilationResult.zero_llm_report` records the first gate independently.
+- Consume tokens before dispatch to prevent automatic replay after crashes. An interrupted consumed action requires explicit host reconciliation; this does not guarantee exactly-once external side effects.
+- Implementation/repair personas must retain the base runtime's durable approval methods. Hosts authenticate supervisors; audit labels and dialogue text are not authentication mechanisms.
 
 ## Complexity Tracking
 
