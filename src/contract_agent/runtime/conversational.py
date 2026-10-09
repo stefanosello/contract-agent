@@ -16,6 +16,7 @@ from contract_agent.compiler.models import (
     ConversationSession,
     ConversationTurnResult,
     MessageRole,
+    PendingApproval,
 )
 from contract_agent.runtime.conversation_stream import execute_turn_stream
 from contract_agent.runtime.guards import GuardInterceptor
@@ -90,7 +91,19 @@ class BaseConversationalAgent:
         return self.step(message).reply
 
     def approve(self, token: str, approver_id: str | None = None) -> ConversationTurnResult:
-        """Resumes suspended tool execution requiring approval."""
+        """Trusted host adapter: grant a durable approval and resume the request."""
+        pending = self._pending_approval(token)
+        if pending.resource_id is None:
+            raise ValueError("Approval request has no resource identity")
+        self.interceptor.context.approval_store.grant_approval(
+            approval_type=pending.approval_type,
+            resource_id=pending.resource_id,
+            granted_by=approver_id or "manager",
+        )
+        return self.resume_approval(token)
+
+    def _pending_approval(self, token: str) -> PendingApproval:
+        """Reject unregistered, stale, or modified session-snapshot requests."""
         if self.state != AgentState.AWAITING_APPROVAL:
             raise ValueError(f"Agent state is {self.state}, expected AWAITING_APPROVAL")
         if token not in self.session.pending_approvals:
@@ -99,27 +112,36 @@ class BaseConversationalAgent:
         if pending.status != "pending":
             raise ValueError(f"Approval token '{token}' has status '{pending.status}', expected 'pending'")
 
-        pending.status = "approved"
-        resource_id = str(
-            pending.tool_args.get("account_id")
-            or pending.tool_args.get("invoice_id")
-            or pending.tool_args.get("resource_id")
-            or "unknown"
+        persisted = self.interceptor.context.approval_store.requests.get(
+            token, self.session.session_id
         )
-        self.interceptor.context.approval_store.grant_approval(
-            approval_type="manager_signoff",
-            resource_id=resource_id,
-            granted_by=approver_id or "manager",
-        )
+        if persisted["status"] != "pending":
+            raise ValueError("Durable approval request is no longer pending")
+        if persisted != pending.model_dump(mode="json"):
+            raise ValueError("Session approval payload does not match durable request")
+        return pending
+
+    def resume_approval(self, token: str) -> ConversationTurnResult:
+        """Resume an action approved asynchronously by an external supervisor."""
+        pending = self._pending_approval(token)
+        self.interceptor.context.approval_store.requests.claim(token, self.session.session_id)
+        pending.status = "consumed"
 
         self.state = AgentState.PROCESSING
         self.session.state = AgentState.PROCESSING
         guarded = self.interceptor.wrap_tool(pending.tool_name, getattr(self.tools, pending.tool_name))
-        tool_res = guarded(**pending.tool_args)
+        try:
+            tool_res = guarded(**pending.tool_args)
+            if isinstance(tool_res, dict) and "error" in tool_res and "invariant_id" in tool_res:
+                raise ValueError(f"Approved action remains blocked: {tool_res['error']}")
+        except Exception:
+            self.state = AgentState.FAILED
+            self.session.state = AgentState.FAILED
+            raise
         self.state = AgentState.AWAITING_INPUT
         self.session.state = AgentState.AWAITING_INPUT
 
-        reply = f"Approval granted by {approver_id or 'manager'}. Executed {pending.tool_name}: {tool_res}"
+        reply = f"Durable approval granted. Executed {pending.tool_name}: {tool_res}"
         self.session.messages.append(ConversationMessage(role=MessageRole.ASSISTANT, content=reply))
 
         events = [
