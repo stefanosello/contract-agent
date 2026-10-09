@@ -79,6 +79,8 @@ class PendingApproval(BaseModel):
     invariant_id: str
     tool_name: str
     tool_args: dict[str, Any] = Field(default_factory=dict)
+    approval_type: str = "manager_signoff"
+    resource_id: str | None = None
     created_at: float = Field(default_factory=time.time)
     status: str = "pending"
 
@@ -92,6 +94,7 @@ class ConversationSession(BaseModel):
     state: AgentState = AgentState.IDLE
     messages: list[ConversationMessage] = Field(default_factory=list)
     pending_approvals: dict[str, PendingApproval] = Field(default_factory=dict)
+    workflow_calls: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid")

@@ -96,6 +96,11 @@ async def execute_turn_stream(
                 invariant_id=exc.invariant_id,
                 tool_name=tool_name,
                 tool_args=tool_args,
+                approval_type=exc.approval_type,
+                resource_id=exc.resource_id,
+            )
+            agent.interceptor.context.approval_store.requests.register(
+                agent.session.session_id, pending.model_dump(mode="json")
             )
             agent.session.pending_approvals[token] = pending
             agent.state = AgentState.AWAITING_APPROVAL
