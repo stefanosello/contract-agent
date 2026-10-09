@@ -199,6 +199,7 @@ class CompilationResult(BaseModel):
     iterations_used: int = 0
     telemetry: CostTelemetry = Field(default_factory=CostTelemetry)
     verification_report: VerificationReport | None = None
+    zero_llm_report: VerificationReport | None = None
     generated_files: list[Path] = Field(default_factory=list)
     diff_summary: str | None = None
     error_message: str | None = None

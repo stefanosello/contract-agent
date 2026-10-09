@@ -31,6 +31,7 @@ from contract_agent.compiler.templates import (
     generate_default_test_suite,
 )
 from contract_agent.compiler.verification import SandboxedVerificationRunner
+from contract_agent.compiler.zero_llm_verification import ZeroLLMVerificationRunner
 from contract_agent.core.parser import ContractParser
 
 
@@ -44,11 +45,13 @@ class ContractCompiler:
         per_test_timeout: float = 10.0,
         runner: SandboxedVerificationRunner | None = None,
         self_healing_engine: SelfHealingEngine | None = None,
+        zero_llm_runner: ZeroLLMVerificationRunner | None = None,
     ) -> None:
         self.provider = provider or get_provider("mock")
         self.budget_ceiling = budget_ceiling
         self.per_test_timeout = per_test_timeout
         self.runner = runner or SandboxedVerificationRunner(per_test_timeout=per_test_timeout)
+        self.zero_llm_runner = zero_llm_runner or ZeroLLMVerificationRunner()
         self.self_healing_engine = self_healing_engine or SelfHealingEngine(
             provider=self.provider,
             runner=self.runner,
@@ -74,6 +77,17 @@ class ContractCompiler:
         stage_path = ensure_clean_staging_dir(staging_dir, workspace_root=workspace_root)
 
         telemetry = CostTelemetry()
+
+        # Mandatory Zero-LLM gate, including when generated test execution is skipped.
+        zero_llm_report = self.zero_llm_runner.run_verification(ast)
+        if not zero_llm_report.passed:
+            return CompilationResult(
+                success=False,
+                promoted=False,
+                telemetry=telemetry,
+                zero_llm_report=zero_llm_report,
+                error_message="Zero-LLM property/mutation verification failed before synthesis.",
+            )
 
         # 2. Deterministically generate Protocols and Mocks
         interface_code = generate_interface_code(ast)
@@ -135,6 +149,7 @@ class ContractCompiler:
                 iterations_used=0,
                 telemetry=telemetry,
                 generated_files=generated_files,
+                zero_llm_report=zero_llm_report,
             )
 
         # 4. Self-healing verification loop
@@ -153,6 +168,7 @@ class ContractCompiler:
                 iterations_used=max_retries,
                 telemetry=telemetry,
                 verification_report=verification_report,
+                zero_llm_report=zero_llm_report,
                 generated_files=generated_files,
                 error_message="Verification failed: Self-healing retries exhausted.",
             )
@@ -163,5 +179,6 @@ class ContractCompiler:
             iterations_used=1,
             telemetry=telemetry,
             verification_report=verification_report,
+            zero_llm_report=zero_llm_report,
             generated_files=generated_files,
         )
