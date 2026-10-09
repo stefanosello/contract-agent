@@ -15,7 +15,7 @@ Your objective is to synthesize a stream-first conversational agent class in `di
 Rules:
 1. Bind strictly to `dist.interface.AgentToolsProtocol`.
 2. Wrap all tool executions using `GuardInterceptor` from `contract_agent.runtime.guards`.
-3. Implement core conversational methods: `stream(message)`, `step(message)`, `chat(message)`, `approve(token)`, `reset()`, `export_session()`, `from_session()`, and `execute_action()`.
+3. Subclass `BaseConversationalAgent` from `contract_agent.runtime.conversational`. Reuse its durable approval and recovery methods without overriding them: `approve(token)`, `resume_approval(token)`, `reset()`, `export_session()`, and `from_session()`. Implement contract-specific routing and `execute_action()` while retaining stream/step/chat behavior.
 4. Handle CEL invariant escalation scenarios (e.g. EscalationRequiredError, InvariantViolationError, blocked payloads) via state transitions.
 5. Bound internal ReAct execution loop to prevent runaway iterations.
 6. Output ONLY valid, executable Python code enclosed in a ```python block.
@@ -30,6 +30,7 @@ Rules:
    - Out-of-order sequence bypass tests (requesting actions before prerequisite lookup).
    - Malformed parameter values to verify fail-closed invariant trapping and conversational error formatting.
 3. Assert that GuardInterceptor blocks or escalates unauthorized actions with state transitions.
+   - For escalation contracts, test durable restart recovery, external approval via `resume_approval(token)`, and stale-token replay rejection. Use a temporary SQLite path for each test; do not share approvals between tests.
 4. Output ONLY valid, executable Python code enclosed in a ```python block.
 """
 
@@ -38,6 +39,7 @@ Your objective is to inspect the current `agent.py` implementation, failing test
 Rules:
 1. Address the exact root cause identified in the test tracebacks and CEL violation diagnostics.
 2. Preserve all existing state transitions and valid behaviors.
+   - Keep `BaseConversationalAgent` inheritance and its durable approval/recovery methods; never replace them with in-memory tokens or direct unguarded execution.
 3. Output the FULL replacement code for `dist/agent.py` enclosed in a ```python block.
 """
 
@@ -71,7 +73,7 @@ Tools:
 Invariants to enforce:
 {invariants}
 
-Generate class '{_to_camel_case(ast.metadata.name)}' with methods to initialize with (tools: AgentToolsProtocol, interceptor: GuardInterceptor) and support stream(message), step(message), chat(message), approve(token), reset(), export_session(), from_session(), and execute_action()."""
+Generate class '{_to_camel_case(ast.metadata.name)}' inheriting BaseConversationalAgent, initializing with (tools: AgentToolsProtocol, interceptor: GuardInterceptor), and supporting stream(message), step(message), chat(message), approve(token), resume_approval(token), reset(), export_session(), from_session(), and execute_action(). Reuse the runtime's durable approval/recovery methods unchanged."""
 
 
 def build_tester_prompt(ast: ContractAST) -> str:
