@@ -1,0 +1,94 @@
+spec_version: "0.3"
+metadata:
+  name: "conversational_customer_service"
+  version: "1.0.0"
+  description: "Handles multi-turn customer support inquiries, account lookups, and credit adjustments"
+system:
+  role: "Conversational Customer Service Agent"
+  guidelines:
+    - "Greet the customer politely and maintain context across messages."
+    - "Always lookup the customer account before applying adjustments."
+    - "Credits above $50 require supervisor escalation."
+invariants:
+  - id: "INV-001"
+    target: "tool:grant_account_credit"
+    description: "Account credit adjustments cannot exceed $50 without supervisor escalation"
+    rule: "args.amount <= 50.0"
+    on_violation: "require_escalation"
+  - id: "INV-002"
+    target: "session:call_sequence"
+    description: "lookup_account must be invoked before grant_account_credit"
+    rule: "called_before('lookup_account', 'grant_account_credit')"
+    on_violation: "block_tool_call"
+tools:
+  - name: "lookup_account"
+    description: "Looks up customer account details by account ID"
+    parameters:
+      type: "object"
+      required: ["account_id"]
+      properties:
+        account_id:
+          type: "string"
+    returns:
+      type: "object"
+      properties:
+        account_id:
+          type: "string"
+        customer_name:
+          type: "string"
+        tier:
+          type: "string"
+        balance:
+          type: "number"
+  - name: "grant_account_credit"
+    description: "Grants goodwill credit to customer account"
+    parameters:
+      type: "object"
+      required: ["account_id", "amount", "reason"]
+      properties:
+        account_id:
+          type: "string"
+        amount:
+          type: "number"
+        reason:
+          type: "string"
+    returns:
+      type: "object"
+      properties:
+        credit_id:
+          type: "string"
+        new_balance:
+          type: "number"
+        status:
+          type: "string"
+scenarios:
+  - id: "SCEN-001"
+    title: "Standard multi-turn credit adjustment"
+    context:
+      account_id: "ACC-550"
+      customer_name: "Alice Smith"
+    user_input: "Hello, I noticed a minor billing discrepancy on my account ACC-550."
+    expected_flow:
+      - tool_call: "lookup_account"
+        with_args:
+          account_id: "ACC-550"
+      - tool_call: "grant_account_credit"
+        with_args:
+          account_id: "ACC-550"
+          amount: 25.0
+          reason: "Minor billing discrepancy"
+        response_contains: ["credit applied", "ACC-550"]
+  - id: "SCEN-002"
+    title: "High-value credit requiring supervisor escalation"
+    context:
+      account_id: "ACC-990"
+    user_input: "I was promised a $100 loyalty credit on account ACC-990."
+    expected_flow:
+      - tool_call: "lookup_account"
+        with_args:
+          account_id: "ACC-990"
+      - tool_call: "grant_account_credit"
+        with_args:
+          account_id: "ACC-990"
+          amount: 100.0
+          reason: "Loyalty credit"

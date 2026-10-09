@@ -2,9 +2,17 @@
 
 from contract_agent.cli.review import ReviewGate
 from contract_agent.compiler.models import (
+    AgentState,
     CompilationConfig,
     CompilationResult,
+    ConversationEvent,
+    ConversationEventType,
+    ConversationMessage,
+    ConversationSession,
+    ConversationTurnResult,
     CostTelemetry,
+    MessageRole,
+    PendingApproval,
     VerificationReport,
 )
 from contract_agent.compiler.orchestrator import ContractCompiler
@@ -25,11 +33,16 @@ from contract_agent.core.exceptions import (
 from contract_agent.core.parser import ContractParser, load_contract
 from contract_agent.runtime.cel_engine import CELEngine
 from contract_agent.runtime.context import WorkflowContext
+from contract_agent.runtime.conversational import BaseConversationalAgent
 from contract_agent.runtime.guards import GuardInterceptor
+
+ConversationalAgent = BaseConversationalAgent
 
 __version__ = "0.2.6"
 
 __all__ = [
+    "AgentState",
+    "BaseConversationalAgent",
     "BudgetExceededError",
     "CELEngine",
     "CompilationConfig",
@@ -39,6 +52,12 @@ __all__ = [
     "ContractCompiler",
     "ContractParser",
     "ContractValidationError",
+    "ConversationEvent",
+    "ConversationEventType",
+    "ConversationMessage",
+    "ConversationSession",
+    "ConversationTurnResult",
+    "ConversationalAgent",
     "CostTelemetry",
     "EscalationRequiredError",
     "GuardInterceptor",
@@ -46,7 +65,9 @@ __all__ = [
     "InvariantViolationError",
     "IsolationSecurityError",
     "LLMProvider",
+    "MessageRole",
     "MockLLMProvider",
+    "PendingApproval",
     "ReviewGate",
     "ToolContract",
     "VerificationReport",
@@ -54,3 +75,4 @@ __all__ = [
     "get_provider",
     "load_contract",
 ]
+

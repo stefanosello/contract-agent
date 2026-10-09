@@ -103,5 +103,46 @@ def compile(
     sys.exit(0)
 
 
+@app.command(name="run")
+def run(
+    message: Annotated[str, typer.Argument(help="Message to send to the conversational agent")],
+    contract_path: Annotated[Path, typer.Option("--contract", "-c", help="Path to contract YAML")] = Path("tests/fixtures/benchmarks/01_billing_dispute.contract.yaml"),
+    dist_dir: Annotated[Path, typer.Option("--dist-dir", help="Directory with compiled agent")] = Path("dist"),
+    as_json: Annotated[bool, typer.Option("--json", help="Output execution result as JSON")] = False,
+    provider: Annotated[str, typer.Option("--provider", help="LLM provider if compilation needed")] = "mock",
+) -> None:
+    """Executes a single conversational turn with an agent from bash/scripts."""
+    from contract_agent.cli.runner import run_command_action
+
+    code = run_command_action(
+        message=message,
+        contract_path=contract_path,
+        dist_dir=dist_dir,
+        as_json=as_json,
+        provider=provider,
+        console=console,
+    )
+    if code != 0:
+        sys.exit(code)
+
+
+@app.command(name="chat")
+def chat(
+    contract_path: Annotated[Path, typer.Argument(help="Path to contract YAML")] = Path("tests/fixtures/benchmarks/01_billing_dispute.contract.yaml"),
+    dist_dir: Annotated[Path, typer.Option("--dist-dir", help="Directory with compiled agent")] = Path("dist"),
+    provider: Annotated[str, typer.Option("--provider", help="LLM provider if compilation needed")] = "mock",
+) -> None:
+    """Starts a live interactive terminal chat session with an agent."""
+    from contract_agent.cli.runner import chat_command_action
+
+    chat_command_action(
+        contract_path=contract_path,
+        dist_dir=dist_dir,
+        provider=provider,
+        console=console,
+    )
+
+
 if __name__ == "__main__":
     app()
+

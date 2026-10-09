@@ -107,10 +107,17 @@ class ApprovalStore:
 class WorkflowContext:
     """Manages multi-turn execution state, tool call history, and approval verification."""
 
-    def __init__(self, approval_store: ApprovalStore | None = None) -> None:
+    def __init__(
+        self,
+        approval_store: ApprovalStore | None = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.call_history: list[ToolCallRecord] = []
         self.approval_store = approval_store or ApprovalStore(":memory:")
+        self.session_id = session_id
         self.session_data: dict[str, Any] = {}
+        self.metadata: dict[str, Any] = metadata or {}
 
     def record_call(
         self, tool_name: str, args: dict[str, Any], resource_id: str | None = None
@@ -122,7 +129,7 @@ class WorkflowContext:
 
     def has_approval(self, approval_type: str, resource_id: str) -> bool:
         """Exposed to CEL: workflow.has_approval(type, resource_id)."""
-        return self.approval_store.has_approval(approval_type, str(resource_id))
+        return self.approval_store.has_approval(approval_type, resource_id)
 
     def called_before(
         self, prior_tool: str, target_tool: str, resource_id: str | None = None
@@ -141,7 +148,7 @@ class WorkflowContext:
                     or record.args.get("invoice_id")
                     or record.args.get("resource_id")
                 )
-                if str(matched_id) == str(resource_id):
+                if str(matched_id) == resource_id:
                     return True
         return False
 
@@ -156,5 +163,5 @@ class WorkflowContext:
             and str(
                 r.resource_id or r.args.get("invoice_id") or r.args.get("resource_id")
             )
-            == str(resource_id)
+            == resource_id
         )
