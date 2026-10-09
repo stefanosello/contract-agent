@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import sqlite3
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+from contract_agent.runtime.approval_requests import ApprovalRequestStore
 
 
 @dataclass
@@ -22,10 +25,15 @@ class ToolCallRecord:
 class ApprovalStore:
     """Durable approval store backed by SQLite (or in-memory for testing)."""
 
-    def __init__(self, db_path: str | Path | None = ":memory:") -> None:
-        self.db_path = str(db_path) if db_path else ":memory:"
+    def __init__(self, db_path: str | Path | None = None) -> None:
+        default_path = Path.home() / ".local" / "share" / "contract-agent" / "approvals.sqlite3"
+        self.db_path = str(db_path or os.environ.get("CONTRACT_AGENT_APPROVAL_DB") or default_path)
+        if self.db_path != ":memory:":
+            Path(self.db_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
+            self.db_path = str(Path(self.db_path).expanduser())
         self.conn = sqlite3.connect(self.db_path)
         self._init_db()
+        self.requests = ApprovalRequestStore(self.conn)
 
     def _init_db(self) -> None:
         with self.conn:
@@ -114,7 +122,7 @@ class WorkflowContext:
         metadata: dict[str, Any] | None = None,
     ) -> None:
         self.call_history: list[ToolCallRecord] = []
-        self.approval_store = approval_store or ApprovalStore(":memory:")
+        self.approval_store = approval_store or ApprovalStore()
         self.session_id = session_id
         self.session_data: dict[str, Any] = {}
         self.metadata: dict[str, Any] = metadata or {}

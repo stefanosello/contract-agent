@@ -190,7 +190,7 @@ Task: "Update AgentImplementer persona in src/contract_agent/compiler/personas.p
 ### C1 — Durable Asynchronous Approvals
 
 - [X] T029 [US3] Add durable approval restart, external resolution, and fail-closed replay tests in `tests/integration/compiler/test_durable_approvals.py`; isolate default approval databases in `tests/conftest.py`.
-- [ ] T030 [US3] Default `ApprovalStore` to configurable file-backed SQLite and persist session-bound approval requests in `src/contract_agent/runtime/approval_requests.py` and `src/contract_agent/runtime/context.py`.
+- [X] T030 [US3] Default `ApprovalStore` to configurable file-backed SQLite and persist session-bound approval requests in `src/contract_agent/runtime/approval_requests.py` and `src/contract_agent/runtime/context.py`.
 - [ ] T031 [US3] Bind pending approvals to `(approval_type, resource_id)` and persist escalation payloads before publishing tokens in `src/contract_agent/compiler/models.py` and `src/contract_agent/runtime/conversation_stream.py`.
 - [ ] T032 [US3] Route programmatic/in-band approvals through durable transitions and add externally approved request resumption in `src/contract_agent/runtime/conversational.py`.
 - [ ] T033 [US3] Restore guard-relevant workflow history and validate durable request identity on session restoration; cancel pending requests on reset in `src/contract_agent/runtime/conversational.py`.
